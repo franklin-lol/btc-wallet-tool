@@ -58,7 +58,7 @@ python btc_wallet_tool.py
 
 ## Offline mode
 
-Build raw TX hex without an internet connection (UTXO data must be fetched separately).  
+Build raw TX hex without an internet connection (UTXO data must be fetched separately).
 Useful for air-gapped signing — build the hex, transfer to online machine, broadcast manually.
 
 ---
@@ -74,7 +74,7 @@ Useful for air-gapped signing — build the hex, transfer to online machine, bro
 
 ## Fee calculation
 
-Fee is estimated as `(180 * inputs + 34 + 10) * sat_per_byte`.  
+Fee is estimated as `(180 * inputs + 34 + 10) * sat_per_byte`.
 Use **Suggest Fee** to pull current network recommendations from mempool.space.
 
 ---
@@ -93,3 +93,9 @@ requests
 ## License
 
 MIT
+
+---
+
+## Disclaimer
+
+Use at your own risk. Never share your private key.
