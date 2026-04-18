@@ -3,8 +3,8 @@ name: Build Windows EXE
 on:
   push:
     tags:
-      - 'v*'
-  workflow_dispatch:
+      - 'v*'           # запускается при git tag v1.0, v1.1 и т.д.
+  workflow_dispatch:   # можно запустить вручную из GitHub → Actions
 
 jobs:
   build:
@@ -19,22 +19,29 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install PyQt6 bit requests pyinstaller
+        run: pip install -r requirements.txt
 
       - name: Build EXE
         run: |
-          pyinstaller --onefile --windowed --name "BTC-TX-Console" `
-            --icon=icon.ico `
+          pyinstaller --onefile --windowed `
+            --name "BTC-TX-Console" `
+            --collect-all PyQt6 `
+            --hidden-import=bit `
+            --hidden-import=bit.crypto `
+            --hidden-import=bit.network `
+            --hidden-import=bit.network.services `
+            --hidden-import=requests `
+            --hidden-import=logging `
             btc_wallet_tool.py
 
-      - name: Upload artifact
+      - name: Upload artifact (всегда, даже без тега)
         uses: actions/upload-artifact@v4
         with:
           name: BTC-TX-Console-win64
           path: dist/BTC-TX-Console.exe
+          if-no-files-found: error
 
-      - name: Create Release
+      - name: Create GitHub Release (только при теге v*)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
