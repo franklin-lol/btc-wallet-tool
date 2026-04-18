@@ -29,10 +29,16 @@ jobs:
           pyinstaller --onefile --windowed `
             --name "BTC-TX-Console" `
             --collect-all PyQt6 `
+            --collect-all coincurve `
+            --collect-all bit `
             --hidden-import=bit `
             --hidden-import=bit.crypto `
+            --hidden-import=bit.format `
             --hidden-import=bit.network `
             --hidden-import=bit.network.services `
+            --hidden-import=coincurve `
+            --hidden-import=coincurve._cffi_backend `
+            --hidden-import=cffi `
             --hidden-import=requests `
             --hidden-import=logging `
             btc_wallet_tool.py
