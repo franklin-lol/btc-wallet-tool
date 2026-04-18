@@ -1,0 +1,106 @@
+2026-04-06 14:54:57,227 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 0
+2026-04-06 14:55:02,326 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 0
+2026-04-06 14:55:27,399 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 0
+2026-04-06 14:56:42,611 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 0
+2026-04-06 14:56:47,430 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 0
+2026-04-06 14:56:56,319 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 1
+2026-04-06 14:56:56,800 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 1
+2026-04-06 14:56:56,968 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 1
+2026-04-06 14:56:57,144 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 1
+2026-04-06 14:56:57,317 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 1
+2026-04-06 14:56:57,493 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 1
+2026-04-06 14:59:56,454 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 2
+2026-04-06 14:59:57,006 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 2
+2026-04-06 14:59:57,166 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 2
+2026-04-06 14:59:57,316 - ERROR - recover_addresses: non-hexadecimal number found in fromhex() arg at position 2
+2026-04-18 10:54:59,489 - ERROR - —начала восстанови адрес
+2026-04-18 10:56:49,600 - ERROR - recover_addresses: ¬веди приватный ключ
+2026-04-18 10:56:57,603 - INFO - Format:  WIF (HEX)
+2026-04-18 10:56:57,604 - INFO - Legacy:  1BgGZ9tcN4rm9KBzDn7KprQz87SZ26SAMH
+2026-04-18 10:56:57,604 - INFO - SegWit:  3JvL6Ymt8MVWiCNHC7oWU6nLeHNJKLZGLN
+2026-04-18 10:56:57,604 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU73sVHnoWn
+2026-04-18 10:57:00,802 - INFO - Balance [1BgGZ9tcN4rmЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 10:59:29,991 - INFO - Suggested fee: 1 sat/byte  (fastest=1  hour=1)
+2026-04-18 10:59:30,001 - ERROR - —начала проверь баланс (CHECK BALANCE)
+2026-04-18 11:00:34,884 - ERROR - recover_addresses: ¬веди приватный ключ
+2026-04-18 11:00:37,801 - INFO - Format:  WIF (HEX)
+2026-04-18 11:00:37,802 - INFO - Legacy:  17Vu7st1U1KwymUKU4jJheHHGRVNqrcfLD
+2026-04-18 11:00:37,802 - INFO - SegWit:  36UVqWe99RXE1aT6K7hVJ6jHqkw2iRCA4h
+2026-04-18 11:00:37,802 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU75s2EPgZf
+2026-04-18 11:00:39,790 - INFO - Balance [17Vu7st1U1KwЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:00:43,056 - INFO - Format:  WIF (HEX)
+2026-04-18 11:00:43,056 - INFO - Legacy:  19aX4Z8SccSi45uTiDNRGzJkNrKdd7qctk
+2026-04-18 11:00:43,056 - INFO - SegWit:  3FwbJmHed4R6azhTJN9YbaTy8iJwb8Jpfi
+2026-04-18 11:00:43,056 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYk8g52qreTD8Uawqbz7
+2026-04-18 11:00:45,396 - INFO - Balance [19aX4Z8SccSiЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:01:19,873 - INFO - Suggested fee: 1 sat/byte  (fastest=1  hour=1)
+2026-04-18 11:02:18,525 - ERROR - send_transaction: Ќевалидный HEX ключ: длина=15 (нужно 64), содержит non-hex символы
+2026-04-18 11:02:31,250 - INFO - Format:  WIF (HEX)
+2026-04-18 11:02:31,250 - INFO - Legacy:  19aX4Z8SccSi45uTiDNRGzJkNrKdd7qctk
+2026-04-18 11:02:31,250 - INFO - SegWit:  3FwbJmHed4R6azhTJN9YbaTy8iJwb8Jpfi
+2026-04-18 11:02:31,250 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYk8g52qreTD8Uawqbz7
+2026-04-18 11:02:34,235 - INFO - Suggested fee: 1 sat/byte  (fastest=1  hour=1)
+2026-04-18 11:02:39,939 - ERROR - send_transaction: Ќевалидный HEX ключ: длина=15 (нужно 64), содержит non-hex символы
+2026-04-18 11:02:57,798 - INFO - Format:  WIF (HEX)
+2026-04-18 11:02:57,798 - INFO - Legacy:  19aX4Z8SccSi45uTiDNRGzJkNrKdd7qctk
+2026-04-18 11:02:57,798 - INFO - SegWit:  3FwbJmHed4R6azhTJN9YbaTy8iJwb8Jpfi
+2026-04-18 11:02:57,799 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYk8g52qreTD8Uawqbz7
+2026-04-18 11:02:59,331 - ERROR - send_transaction: Ќевалидный HEX ключ: длина=36 (нужно 64), содержит non-hex символы
+2026-04-18 11:03:04,105 - INFO - Format:  WIF (HEX)
+2026-04-18 11:03:04,105 - INFO - Legacy:  19aX4Z8SccSi45uTiDNRGzJkNrKdd7qctk
+2026-04-18 11:03:04,105 - INFO - SegWit:  3FwbJmHed4R6azhTJN9YbaTy8iJwb8Jpfi
+2026-04-18 11:03:04,106 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYk8g52qreTD8Uawqbz7
+2026-04-18 11:03:05,385 - ERROR - send_transaction: Ќевалидный HEX ключ: длина=54 (нужно 64), содержит non-hex символы
+2026-04-18 11:03:14,650 - INFO - Format:  WIF (HEX)
+2026-04-18 11:03:14,651 - INFO - Legacy:  19aX4Z8SccSi45uTiDNRGzJkNrKdd7qctk
+2026-04-18 11:03:14,651 - INFO - SegWit:  3FwbJmHed4R6azhTJN9YbaTy8iJwb8Jpfi
+2026-04-18 11:03:14,651 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYk8g52qreTD8Uawqbz7
+2026-04-18 11:03:21,935 - ERROR - send_transaction: Ќет доступных UTXO
+2026-04-18 11:13:55,167 - INFO - Format:  HEX
+2026-04-18 11:13:55,167 - INFO - Legacy:  1877dPhvZX5TmvK3d85gGGLUxP3ma6CDwt
+2026-04-18 11:13:55,167 - INFO - SegWit:  3FrnGz57uU7pqhq7xgC7P9wWFdSkp459H1
+2026-04-18 11:13:55,168 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFUM73siX7Ui
+2026-04-18 11:13:57,368 - INFO - Balance [1877dPhvZX5TmvЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:13:59,405 - ERROR - send_transaction: ”кажи адрес получател€
+2026-04-18 11:14:06,576 - INFO - Fee: 1 sat/byte  (fastest=1  hour=1)
+2026-04-18 11:14:10,556 - ERROR - send_transaction: Ќет доступных UTXO
+2026-04-18 11:20:14,394 - INFO - Addresses recovered (Format: HEX)
+2026-04-18 11:20:17,112 - INFO - Balance [1KipR7NPTGXC6ZЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:22:07,476 - INFO - Addresses recovered (Format: WIF (compressed))
+2026-04-18 11:22:11,229 - INFO - Balance [19aX4Z8SccSi45Е] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:22:11,784 - INFO - Balance [19aX4Z8SccSi45Е] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:22:11,992 - INFO - Balance [19aX4Z8SccSi45Е] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:32:26,608 - ERROR - recover_addresses: Ќевалидный ключ: содержит не-шестнадцатеричные символы. ќжидаетс€ HEX (1Ц64 символа) или WIF (5.../K.../L...)
+2026-04-18 11:32:38,392 - ERROR - recover_addresses: Ќевалидный ключ: содержит не-шестнадцатеричные символы. ќжидаетс€ HEX (1Ц64 символа) или WIF (5.../K.../L...)
+2026-04-18 11:32:42,179 - INFO - Format:  HEX
+2026-04-18 11:32:42,179 - INFO - Legacy:  1Mdomc4SMeRZXi7ML75mjsb8FzKPoe2t1F
+2026-04-18 11:32:42,179 - INFO - SegWit:  3AC86cP3pc8iXRAExmM5VeebqiRhLW3dX3
+2026-04-18 11:32:42,179 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9Q4a7QX9EDyDSF6
+2026-04-18 11:32:46,430 - INFO - Balance [1Mdomc4SMeRZXiЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:33:20,400 - ERROR - send_transaction: ”кажи комиссию (sat/byte)
+2026-04-18 11:33:23,930 - INFO - Fee: 1 sat/byte  (fastest=1  hour=1)
+2026-04-18 11:33:29,301 - ERROR - send_transaction: Ќет доступных UTXO
+2026-04-18 11:34:13,674 - INFO - Format:  WIF (compressed)
+2026-04-18 11:34:13,674 - INFO - Legacy:  1Mdomc4SMeRZXi7ML75mjsb8FzKPoe2t1F
+2026-04-18 11:34:13,675 - INFO - SegWit:  3AC86cP3pc8iXRAExmM5VeebqiRhLW3dX3
+2026-04-18 11:34:13,675 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9Q4a7QX9EDyDSF6
+2026-04-18 11:34:20,856 - ERROR - recover_addresses: Ќевалидный ключ: содержит не-шестнадцатеричные символы. ќжидаетс€ HEX (1Ц64 символа) или WIF (5.../K.../L...)
+2026-04-18 11:34:29,675 - INFO - Balance [3AC86cP3pc8iXRЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:34:41,801 - INFO - Format:  HEX
+2026-04-18 11:34:41,801 - INFO - Legacy:  17WjmjmYu5Hd9LgWGxmHQJ2hqPZriXQ6K5
+2026-04-18 11:34:41,802 - INFO - SegWit:  3DxVQBLSsRmeAS5MubJMoygMGennsHqa2B
+2026-04-18 11:34:41,802 - INFO - WIF:     KwDiBf89QgGbjEhKnhXJuH8miAJF4sTJVsvPxPWQSkM8wyBu12Ly
+2026-04-18 11:34:44,663 - INFO - Balance [17WjmjmYu5Hd9LЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:38:11,100 - INFO - Format:  HEX
+2026-04-18 11:38:11,101 - INFO - Legacy:  1AzTmbzLEJTtBHSyHDNxsdRq9fn8LdosJo
+2026-04-18 11:38:11,102 - INFO - SegWit:  3QHqUcvUrUEqkcQrzvG5E94SQjA7w9sjyU
+2026-04-18 11:38:13,014 - INFO - Balance [1AzTmbzLEJTtBHЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:38:28,256 - ERROR - build_raw_tx: Ќет доступных UTXO
+2026-04-18 11:38:46,584 - INFO - Balance [1AzTmbzLEJTtBHЕ] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:38:50,745 - INFO - Format:  HEX
+2026-04-18 11:38:50,745 - INFO - Legacy:  1MS4JN4ipCuBv7z9FvH8WRjBinKqw5rmCA
+2026-04-18 11:38:50,745 - INFO - SegWit:  3BXgEyGhxi6M5N6DHcdTfX8jLv1udh6n9T
+2026-04-18 11:38:52,732 - INFO - Balance [1MS4JN4ipCuBv7Е] \u2192 0.00000000 BTC  (0 UTXO)
+2026-04-18 11:44:42,419 - INFO - Format:  HEX
+2026-04-18 11:44:42,420 - INFO - Legacy:  1693NYwCPZYAdF1pYdVfrfCR6c9acpNGQd
+2026-04-18 11:44:42,420 - INFO - SegWit:  3EuoEbF1nd8Ug4pHaw6GMZa6BdmLiPjAVx
