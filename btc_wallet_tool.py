@@ -1,15 +1,17 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QTextEdit, QMessageBox, QComboBox,
-    QFrame, QTabWidget, QSizePolicy
+    QFrame, QTabWidget, QSizePolicy, QDialog
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QSettings
 from PyQt6.QtGui import QIcon
 from bit import Key
 import sys
 import os
 import requests
 import logging
+from translations import get_translation
+from icon import get_app_icon
 
 # ── Отключаем авто-масштабирование Qt — должно быть ДО создания QApplication ──
 os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
@@ -43,221 +45,675 @@ class _PrivKeyMaskFilter(logging.Filter):
 
 for _h in logging.root.handlers:
     _h.addFilter(_PrivKeyMaskFilter())
+
 API_URL = "https://mempool.space/api"
+
+# ── Localization ──────────────────────────────────────────────────────────────
+STRINGS = {
+    "ru": {
+        "title": "⟐ BTC TX",
+        "subtitle": "BITCOIN TRANSACTION CONSOLE  //  OFFLINE & BROADCAST",
+        "priv_key": "PRIVATE KEY  (HEX  или  WIF)",
+        "priv_key_ph": "HEX (1–64 символа, auto zero-pad)  OR  WIF: 5... / K... / L...",
+        "recover": "⟳  RECOVER ADDRESSES",
+        "address": "ADDRESS",
+        "verification": "⚑  VERIFICATION",
+        "legacy": "Legacy (P2PKH):",
+        "segwit": "SegWit (bech32):",
+        "key_format": "Key format:",
+        "wif": "WIF:",
+        "balance": "BALANCE",
+        "check_balance": "↻ CHECK BALANCE",
+        "tab_broadcast": "BROADCAST",
+        "tab_offline": "OFFLINE / RAW HEX",
+        "dest_addr": "DESTINATION ADDRESS",
+        "dest_addr_ph": "bc1q... or 1... or 3...",
+        "amount": "AMOUNT (BTC) — БЕЗ комиссии",
+        "amount_ph": "0.00000000  (пусто = весь баланс)",
+        "fee": "FEE (SAT/BYTE)",
+        "fee_ph": "напр. 20",
+        "suggest": "⚡ SUGGEST",
+        "recipient_gets": "Получит адресат:",
+        "fee_label": "Комиссия:",
+        "broadcast_btn": "▶  BROADCAST TRANSACTION",
+        "build_btn": "⚙  BUILD RAW TX",
+        "txid": "TXID",
+        "raw_hex": "RAW HEX (SIGNED TX)",
+        "raw_hex_ph": "Signed transaction hex will appear here...",
+        "log": "LOG",
+        "clear": "✕ CLEAR",
+        "copy_tooltip": "Копировать",
+        "help": "HELP",
+        "theme": "Theme:",
+        "language": "Language:",
+        "help_title": "BTC Wallet Tool — Помощь",
+        "help_content": """<b>Инструкция:</b><br><br>
+1. Введите приватный ключ (HEX или WIF)<br>
+2. Нажмите "RECOVER ADDRESSES" для получения адресов<br>
+3. Выберите адрес отправителя из выпадающего списка<br>
+4. Проверьте баланс кнопкой "CHECK BALANCE"<br><br>
+
+<b>BROADCAST:</b> немедленная отправка в сеть Bitcoin<br>
+<b>OFFLINE/RAW HEX:</b> создание подписанной транзакции БЕЗ отправки<br>
+(для ручной отправки через mining pool)<br><br>
+
+<b>Автор:</b> <a href='https://franklin-sys.vercel.app/'>franklin-sys.vercel.app</a><br>
+<b>GitHub:</b> <a href='https://github.com/franklin-lol/btc-wallet-tool'>franklin-lol/btc-wallet-tool</a>
+""",
+    },
+    "en": {
+        "title": "⟐ BTC TX",
+        "subtitle": "BITCOIN TRANSACTION CONSOLE  //  OFFLINE & BROADCAST",
+        "priv_key": "PRIVATE KEY  (HEX  or  WIF)",
+        "priv_key_ph": "HEX (1–64 chars, auto zero-pad)  OR  WIF: 5... / K... / L...",
+        "recover": "⟳  RECOVER ADDRESSES",
+        "address": "ADDRESS",
+        "verification": "⚑  VERIFICATION",
+        "legacy": "Legacy (P2PKH):",
+        "segwit": "SegWit (bech32):",
+        "key_format": "Key format:",
+        "wif": "WIF:",
+        "balance": "BALANCE",
+        "check_balance": "↻ CHECK BALANCE",
+        "tab_broadcast": "BROADCAST",
+        "tab_offline": "OFFLINE / RAW HEX",
+        "dest_addr": "DESTINATION ADDRESS",
+        "dest_addr_ph": "bc1q... or 1... or 3...",
+        "amount": "AMOUNT (BTC) — NET",
+        "amount_ph": "0.00000000  (empty = full balance)",
+        "fee": "FEE (SAT/BYTE)",
+        "fee_ph": "e.g. 20",
+        "suggest": "⚡ SUGGEST",
+        "recipient_gets": "Recipient gets:",
+        "fee_label": "Fee:",
+        "broadcast_btn": "▶  BROADCAST TRANSACTION",
+        "build_btn": "⚙  BUILD RAW TX",
+        "txid": "TXID",
+        "raw_hex": "RAW HEX (SIGNED TX)",
+        "raw_hex_ph": "Signed transaction hex will appear here...",
+        "log": "LOG",
+        "clear": "✕ CLEAR",
+        "copy_tooltip": "Copy",
+        "help": "HELP",
+        "theme": "Theme:",
+        "language": "Language:",
+        "help_title": "BTC Wallet Tool — Help",
+        "help_content": """<b>Instructions:</b><br><br>
+1. Enter private key (HEX or WIF)<br>
+2. Click "RECOVER ADDRESSES" to derive addresses<br>
+3. Select sender address from dropdown<br>
+4. Check balance with "CHECK BALANCE" button<br><br>
+
+<b>BROADCAST:</b> immediate broadcast to Bitcoin network<br>
+<b>OFFLINE/RAW HEX:</b> build signed transaction WITHOUT broadcasting<br>
+(for manual submission via mining pool)<br><br>
+
+<b>Author:</b> <a href='https://franklin-sys.vercel.app/'>franklin-sys.vercel.app</a><br>
+<b>GitHub:</b> <a href='https://github.com/franklin-lol/btc-wallet-tool'>franklin-lol/btc-wallet-tool</a>
+""",
+    }
+}
+
+# ── Themes ────────────────────────────────────────────────────────────────────
 
 DARK_STYLE = """
 QWidget {
-    background-color: #0a0a0f;
-    color: #e8e8f0;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
+    background-color: #0f1117;
+    color: #e8eaed;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 11px;
 }
 
 QTabWidget::pane {
-    border: 1px solid #1e1e2e;
-    background-color: #0d0d18;
-    border-radius: 8px;
+    border: 1px solid #2a2d35;
+    background-color: #171a23;
+    border-radius: 6px;
 }
 
 QTabBar::tab {
-    background-color: #111120;
-    color: #6666aa;
-    padding: 10px 24px;
+    background-color: #1a1d26;
+    color: #9ca3af;
+    padding: 8px 20px;
     border: none;
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 10px;
+    letter-spacing: 1px;
     text-transform: uppercase;
+    min-width: 80px;
 }
 
 QTabBar::tab:selected {
-    background-color: #0d0d18;
-    color: #f7931a;
-    border-bottom: 2px solid #f7931a;
+    background-color: #171a23;
+    color: #fbbf24;
+    border-bottom: 2px solid #fbbf24;
 }
 
 QTabBar::tab:hover {
-    color: #ffb347;
+    color: #fcd34d;
+    background-color: #1e222e;
 }
 
 QLabel {
-    color: #8888bb;
-    font-size: 11px;
-    letter-spacing: 1px;
+    color: #d1d5db;
+    font-size: 10px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     padding-bottom: 2px;
 }
 
 QLabel#value_label {
-    color: #f7931a;
-    font-size: 18px;
+    color: #fbbf24;
+    font-size: 17px;
     font-weight: bold;
-    letter-spacing: 1px;
+    letter-spacing: 0px;
     text-transform: none;
     padding: 0px;
 }
 
 QLabel#title_label {
-    color: #f7931a;
-    font-size: 17px;
+    color: #fbbf24;
+    font-size: 16px;
     font-weight: bold;
-    letter-spacing: 4px;
+    letter-spacing: 2px;
     padding: 0px;
 }
 
 QLabel#sub_label {
-    color: #444466;
-    font-size: 10px;
-    letter-spacing: 3px;
+    color: #6b7280;
+    font-size: 9px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
     padding: 0px;
 }
 
 QLineEdit {
-    background-color: #111120;
-    border: 1px solid #222244;
-    border-radius: 6px;
-    color: #e8e8f0;
-    padding: 7px 12px;
-    font-family: 'Courier New', monospace;
+    background-color: #1a1d26;
+    border: 1px solid #374151;
+    border-radius: 5px;
+    color: #f3f4f6;
+    padding: 4px 8px;
+    font-family: 'Courier New', 'Consolas', monospace;
     font-size: 11px;
-    selection-background-color: #f7931a;
-    selection-color: #0a0a0f;
+    selection-background-color: #fbbf24;
+    selection-color: #0f1117;
+    min-height: 22px;
 }
 
 QLineEdit:focus {
-    border: 1px solid #f7931a;
-    background-color: #14141f;
+    border: 1px solid #fbbf24;
+    background-color: #1e222e;
 }
 
 QLineEdit:hover {
-    border: 1px solid #333366;
+    border: 1px solid #4b5563;
 }
 
 QPushButton {
-    background-color: #111120;
-    color: #8888bb;
-    border: 1px solid #222244;
-    border-radius: 6px;
-    padding: 7px 14px;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    letter-spacing: 1px;
+    background-color: #1a1d26;
+    color: #d1d5db;
+    border: 1px solid #374151;
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
 }
 
 QPushButton:hover {
-    background-color: #1a1a2e;
-    border: 1px solid #f7931a;
-    color: #f7931a;
+    background-color: #252935;
+    border: 1px solid #fbbf24;
+    color: #fbbf24;
 }
 
 QPushButton:pressed {
-    background-color: #f7931a;
-    color: #0a0a0f;
+    background-color: #fbbf24;
+    color: #0f1117;
 }
 
 QPushButton#primary_btn {
-    background-color: #f7931a;
-    color: #0a0a0f;
+    background-color: #fbbf24;
+    color: #0f1117;
     border: none;
     font-weight: bold;
     font-size: 11px;
-    letter-spacing: 2px;
-    padding: 9px 16px;
+    letter-spacing: 1px;
+    padding: 9px 14px;
 }
 
 QPushButton#primary_btn:hover {
-    background-color: #ffb347;
-    color: #0a0a0f;
+    background-color: #fcd34d;
+    color: #0f1117;
 }
 
 QPushButton#primary_btn:pressed {
-    background-color: #d4791a;
+    background-color: #f59e0b;
 }
 
 QPushButton#danger_btn {
-    background-color: #1a0a0a;
-    color: #ff4444;
-    border: 1px solid #441111;
+    background-color: #7f1d1d;
+    color: #fca5a5;
+    border: 1px solid #991b1b;
     font-size: 11px;
-    letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 
 QPushButton#danger_btn:hover {
-    background-color: #2a0a0a;
-    border: 1px solid #ff4444;
+    background-color: #991b1b;
+    border: 1px solid #ef4444;
+    color: #fecaca;
 }
 
 QPushButton#danger_btn:pressed {
-    background-color: #ff4444;
-    color: #0a0a0f;
+    background-color: #ef4444;
+    color: #0f1117;
 }
 
 QPushButton#copy_btn {
-    background-color: transparent;
-    color: #444466;
-    border: none;
-    padding: 4px 8px;
-    font-size: 14px;
+    background-color: #1a1d26;
+    color: #9ca3af;
+    border: 1px solid #374151;
+    padding: 3px 5px;
+    font-size: 9px;
     border-radius: 4px;
-    min-width: 32px;
-    max-width: 32px;
+    min-width: 42px;
+    max-width: 42px;
+    min-height: 26px;
+    max-height: 26px;
+    text-transform: none;
+    letter-spacing: 0px;
 }
 
 QPushButton#copy_btn:hover {
-    color: #f7931a;
-    background-color: #111120;
+    color: #fbbf24;
+    background-color: #252935;
+    border: 1px solid #fbbf24;
 }
 
 QTextEdit {
-    background-color: #080810;
-    border: 1px solid #1a1a2e;
-    border-radius: 6px;
-    color: #6666aa;
-    font-family: 'Courier New', monospace;
-    font-size: 11px;
-    padding: 8px;
+    background-color: #0b0e13;
+    border: 1px solid #2a2d35;
+    border-radius: 5px;
+    color: #9ca3af;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 10px;
+    padding: 6px;
 }
 
 QComboBox {
-    background-color: #111120;
-    border: 1px solid #222244;
-    border-radius: 6px;
-    color: #e8e8f0;
-    padding: 7px 14px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    min-height: 20px;
+    background-color: #1a1d26;
+    border: 1px solid #374151;
+    border-radius: 5px;
+    color: #f3f4f6;
+    padding: 7px 12px;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 11px;
+    min-height: 18px;
 }
 
 QComboBox:hover {
-    border: 1px solid #f7931a;
+    border: 1px solid #fbbf24;
 }
 
 QComboBox::drop-down {
     border: none;
-    width: 24px;
+    width: 20px;
 }
 
 QComboBox QAbstractItemView {
-    background-color: #111120;
-    border: 1px solid #f7931a;
-    color: #e8e8f0;
-    selection-background-color: #f7931a;
-    selection-color: #0a0a0f;
+    background-color: #1a1d26;
+    border: 1px solid #fbbf24;
+    color: #f3f4f6;
+    selection-background-color: #fbbf24;
+    selection-color: #0f1117;
 }
 
 QFrame#separator {
-    background-color: #1a1a2e;
+    background-color: #2a2d35;
     max-height: 1px;
     margin: 2px 0px;
 }
 
 QFrame#card {
-    background-color: #0d0d18;
-    border: 1px solid #1a1a2e;
-    border-radius: 10px;
-    padding: 12px;
+    background-color: #171a23;
+    border: 1px solid #2a2d35;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+QMessageBox {
+    background-color: #0f1117;
+}
+
+QMessageBox QLabel {
+    color: #e8eaed;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0px;
+}
+
+QMessageBox QPushButton {
+    min-width: 80px;
+    padding: 7px 14px;
+}
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollBar:vertical {
+    background-color: #1a1d26;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #374151;
+    border-radius: 6px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #4b5563;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QDialog {
+    background-color: #0f1117;
+}
+"""
+
+LIGHT_STYLE = """
+QWidget {
+    background-color: #FFFFFF;
+    color: #1A1A1A;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 11px;
+}
+
+QTabWidget::pane {
+    border: 1px solid #D1D1D1;
+    background-color: #F5F5F5;
+    border-radius: 6px;
+}
+
+QTabBar::tab {
+    background-color: #E8E8E8;
+    color: #6B6B6B;
+    padding: 8px 20px;
+    border: none;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-width: 80px;
+}
+
+QTabBar::tab:selected {
+    background-color: #F5F5F5;
+    color: #00D9FF;
+    border-bottom: 2px solid #00D9FF;
+}
+
+QTabBar::tab:hover {
+    color: #00D9FF;
+    background-color: #F0F0F0;
+}
+
+QLabel {
+    color: #1A1A1A;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding-bottom: 2px;
+}
+
+QLabel#value_label {
+    color: #00D9FF;
+    font-size: 17px;
+    font-weight: bold;
+    letter-spacing: 0px;
+    text-transform: none;
+    padding: 0px;
+}
+
+QLabel#title_label {
+    color: #00D9FF;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    padding: 0px;
+}
+
+QLabel#sub_label {
+    color: #6B6B6B;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0px;
+}
+
+QLineEdit {
+    background-color: #F5F5F5;
+    border: 1px solid #D1D1D1;
+    border-radius: 5px;
+    color: #1A1A1A;
+    padding: 4px 8px;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 11px;
+    selection-background-color: #00D9FF;
+    selection-color: #FFFFFF;
+    min-height: 22px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #00D9FF;
+    background-color: #FFFFFF;
+}
+
+QLineEdit:hover {
+    border: 1px solid #00D9FF;
+}
+
+QPushButton {
+    background-color: #F5F5F5;
+    color: #1A1A1A;
+    border: 1px solid #D1D1D1;
+    border-radius: 5px;
+    padding: 7px 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+QPushButton:hover {
+    background-color: #E8E8E8;
+    border: 1px solid #00D9FF;
+    color: #00D9FF;
+}
+
+QPushButton:pressed {
+    background-color: #00D9FF;
+    color: #FFFFFF;
+}
+
+QPushButton#primary_btn {
+    background-color: #1A1A1A;
+    color: #FFFFFF;
+    border: none;
+    font-weight: bold;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 9px 14px;
+}
+
+QPushButton#primary_btn:hover {
+    background-color: #2A2A2A;
+    color: #FFFFFF;
+}
+
+QPushButton#primary_btn:pressed {
+    background-color: #00D9FF;
+}
+
+QPushButton#danger_btn {
+    background-color: #FFE5E5;
+    color: #D32F2F;
+    border: 1px solid #FFCDD2;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+QPushButton#danger_btn:hover {
+    background-color: #FFCDD2;
+    border: 1px solid #D32F2F;
+    color: #B71C1C;
+}
+
+QPushButton#danger_btn:pressed {
+    background-color: #D32F2F;
+    color: #FFFFFF;
+}
+
+QPushButton#copy_btn {
+    background-color: #F5F5F5;
+    color: #6B6B6B;
+    border: 1px solid #D1D1D1;
+    padding: 3px 5px;
+    font-size: 9px;
+    border-radius: 4px;
+    min-width: 42px;
+    max-width: 42px;
+    min-height: 26px;
+    max-height: 26px;
+    text-transform: none;
+    letter-spacing: 0px;
+}
+
+QPushButton#copy_btn:hover {
+    color: #00D9FF;
+    background-color: #E8E8E8;
+    border: 1px solid #00D9FF;
+}
+
+QTextEdit {
+    background-color: #F5F5F5;
+    border: 1px solid #D1D1D1;
+    border-radius: 5px;
+    color: #1A1A1A;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 10px;
+    padding: 6px;
+}
+
+QComboBox {
+    background-color: #F5F5F5;
+    border: 1px solid #D1D1D1;
+    border-radius: 5px;
+    color: #1A1A1A;
+    padding: 7px 12px;
+    font-family: 'Courier New', 'Consolas', monospace;
+    font-size: 11px;
+    min-height: 18px;
+}
+
+QComboBox:hover {
+    border: 1px solid #00D9FF;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 20px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #F5F5F5;
+    border: 1px solid #00D9FF;
+    color: #1A1A1A;
+    selection-background-color: #00D9FF;
+    selection-color: #FFFFFF;
+}
+
+QFrame#separator {
+    background-color: #D1D1D1;
+    max-height: 1px;
+    margin: 2px 0px;
+}
+
+QFrame#card {
+    background-color: #F5F5F5;
+    border: 1px solid #D1D1D1;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+QMessageBox {
+    background-color: #FFFFFF;
+}
+
+QMessageBox QLabel {
+    color: #1A1A1A;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0px;
+}
+
+QMessageBox QPushButton {
+    min-width: 80px;
+    padding: 7px 14px;
+}
+
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollBar:vertical {
+    background-color: #E8E8E8;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #D1D1D1;
+    border-radius: 6px;
+    min-height: 30px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #B0B0B0;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QDialog {
+    background-color: #FFFFFF;
+}
+
+QDialog QLabel {
+    color: #1A1A1A;
+    font-size: 11px;
+    text-transform: none;
+    letter-spacing: 0px;
+}
+
+QDialog QPushButton {
+    background-color: #F5F5F5;
+    color: #1A1A1A;
+    border: 1px solid #D1D1D1;
+    border-radius: 5px;
+    padding: 7px 12px;
+}
+
+QDialog QPushButton:hover {
+    background-color: #E8E8E8;
+    border: 1px solid #00D9FF;
+    color: #00D9FF;
 }
 """
 
@@ -276,19 +732,19 @@ def make_label(text):
     return lbl
 
 
-def make_copy_btn(parent, get_text_fn):
-    btn = QPushButton("⎘")
+def make_copy_btn(parent, get_text_fn, tooltip_text="Копировать"):
+    btn = QPushButton("Copy")
     btn.setObjectName("copy_btn")
-    btn.setToolTip("Копировать")
+    btn.setToolTip(tooltip_text)
     btn.setCursor(Qt.CursorShape.PointingHandCursor)
-    btn.setFixedSize(32, 32)
+    btn.setFixedSize(42, 26)
 
     def do_copy():
-        val = get_text_fn()
+        val = get_text_fn() if callable(get_text_fn) else get_text_fn
         if val and val not in ('-', '', ' '):
             QApplication.clipboard().setText(val)
             btn.setText("✓")
-            QTimer.singleShot(1200, lambda: btn.setText("⎘"))
+            QTimer.singleShot(1200, lambda: btn.setText("Copy"))
 
     btn.clicked.connect(do_copy)
     return btn
@@ -329,7 +785,17 @@ class BTCTransactionApp(QWidget):
         self._balance_sats   = None
         self._utxo_count     = 1
         self._workers        = []
+
+        # Settings
+        self.settings = QSettings("FranklinSys", "BTCWalletTool")
+        self.current_theme = self.settings.value("theme", "dark")
+        self.current_lang = self.settings.value("language", "ru")
+
         self.initUI()
+
+    def tr(self, key):
+        """Get translated string for current language."""
+        return get_translation(self.current_lang, key)
 
     # ── Worker lifecycle ─────────────────────────────────────────────────────
 
@@ -348,342 +814,450 @@ class BTCTransactionApp(QWidget):
     # ────────────────────────────────────────────────────────────────────────
 
     def initUI(self):
-        self.setWindowTitle('⟐ BTC TX CONSOLE')
-        # FIXED SIZE — ресайз отключён, окно больше не тянется и не ломает layout
-        self.setFixedSize(680, 940)
-        self.setStyleSheet(DARK_STYLE)
+        self.setWindowTitle(self.tr("app_title"))
+        self.setWindowIcon(get_app_icon())
+        self.setFixedSize(720, 861)
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(18, 14, 18, 14)
+        root.setContentsMargins(16, 12, 16, 12)
         root.setSpacing(0)
 
-        # ── Header ──────────────────────────────────────────────────────────
-        title = QLabel("⟐ BTC TX")
+        # ── Header with controls ────────────────────────────────────────────
+        header_row = QHBoxLayout()
+        header_row.setSpacing(10)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(0)
+        title = QLabel("BITCOIN WALLET TOOL")
         title.setObjectName("title_label")
-        title.setFixedHeight(26)
-        sub = QLabel("BITCOIN TRANSACTION CONSOLE  //  OFFLINE & BROADCAST")
+        title.setFixedHeight(22)
+        sub = QLabel("SECURE OFFLINE TRANSACTION BUILDER")
         sub.setObjectName("sub_label")
-        sub.setFixedHeight(14)
-        root.addWidget(title)
-        root.addWidget(sub)
-        root.addSpacing(8)
+        sub.setFixedHeight(12)
+        title_col.addWidget(title)
+        title_col.addWidget(sub)
+        header_row.addLayout(title_col, 1)
+
+        # Compact controls row
+        ctrl_row = QHBoxLayout()
+        ctrl_row.setSpacing(6)
+        ctrl_row.setContentsMargins(0, 0, 0, 0)
+
+        self.theme_selector = QComboBox()
+        self.theme_selector.addItems(["Dark", "Light"])
+        self.theme_selector.setCurrentIndex(0 if self.current_theme == "dark" else 1)
+        self.theme_selector.setFixedHeight(28)
+        self.theme_selector.setFixedWidth(72)
+        self.theme_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #1a1d26;
+                border: 1px solid #374151;
+                border-radius: 4px;
+                color: #d1d5db;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: 500;
+            }
+            QComboBox:hover {
+                border: 1px solid #fbbf24;
+                color: #fbbf24;
+            }
+        """)
+        self.theme_selector.currentIndexChanged.connect(self.change_theme_by_index)
+        ctrl_row.addWidget(self.theme_selector)
+
+        self.lang_selector = QComboBox()
+        self.lang_selector.addItems(["RU", "EN"])
+        self.lang_selector.setCurrentIndex(0 if self.current_lang == "ru" else 1)
+        self.lang_selector.setFixedHeight(28)
+        self.lang_selector.setFixedWidth(56)
+        self.lang_selector.setStyleSheet("""
+            QComboBox {
+                background-color: #1a1d26;
+                border: 1px solid #374151;
+                border-radius: 4px;
+                color: #d1d5db;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: 500;
+            }
+            QComboBox:hover {
+                border: 1px solid #fbbf24;
+                color: #fbbf24;
+            }
+        """)
+        self.lang_selector.currentIndexChanged.connect(self.change_language_by_index)
+        ctrl_row.addWidget(self.lang_selector)
+
+        self.btn_help = QPushButton("?")
+        self.btn_help.setFixedSize(28, 28)
+        self.btn_help.setToolTip(self.tr("help"))
+        self.btn_help.setStyleSheet("""
+            QPushButton {
+                background-color: #1a1d26;
+                color: #fbbf24;
+                border: 1px solid #fbbf24;
+                border-radius: 14px;
+                font-size: 13px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #fbbf24;
+                color: #0f1117;
+            }
+        """)
+        self.btn_help.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_help.clicked.connect(self.show_help)
+        ctrl_row.addWidget(self.btn_help)
+
+        header_row.addLayout(ctrl_row)
+        root.addLayout(header_row)
+        root.addSpacing(6)
         root.addWidget(make_separator())
-        root.addSpacing(8)
+        root.addSpacing(6)
 
         # ── Private Key ─────────────────────────────────────────────────────
-        root.addWidget(make_label("PRIVATE KEY  (HEX  или  WIF)"))
-        root.addSpacing(4)
+        root.addWidget(make_label(self.tr("priv_key")))
+        root.addSpacing(3)
         key_row = QHBoxLayout()
         key_row.setSpacing(6)
         self.input_priv_key = QLineEdit()
-        self.input_priv_key.setPlaceholderText("HEX (1–64 символа, auto zero-pad)  OR  WIF: 5... / K... / L...")
+        self.input_priv_key.setPlaceholderText(self.tr("priv_key_ph"))
         self.input_priv_key.setEchoMode(QLineEdit.EchoMode.Password)
-        self.input_priv_key.setFixedHeight(32)
-        key_row.addWidget(self.input_priv_key)
+        self.input_priv_key.setFixedHeight(30)
+        self.input_priv_key.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        key_row.addWidget(self.input_priv_key, 1)
         self.btn_show_key = QPushButton("👁")
         self.btn_show_key.setObjectName("copy_btn")
-        self.btn_show_key.setFixedSize(32, 32)
-        self.btn_show_key.setToolTip("Показать/скрыть ключ")
+        self.btn_show_key.setFixedSize(30, 30)
+        self.btn_show_key.setToolTip(self.tr("copy_tooltip"))
         self.btn_show_key.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_show_key.clicked.connect(self.toggle_key_visibility)
         key_row.addWidget(self.btn_show_key)
         root.addLayout(key_row)
-        root.addSpacing(7)
+        root.addSpacing(5)
 
-        self.btn_recover = QPushButton("⟳  RECOVER ADDRESSES")
+        self.btn_recover = QPushButton(self.tr("recover"))
         self.btn_recover.setObjectName("primary_btn")
-        self.btn_recover.setFixedHeight(34)
+        self.btn_recover.setFixedHeight(32)
         self.btn_recover.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_recover.clicked.connect(self.recover_addresses)
         root.addWidget(self.btn_recover)
-        root.addSpacing(8)
+        root.addSpacing(6)
         root.addWidget(make_separator())
-        root.addSpacing(8)
+        root.addSpacing(6)
 
         # ── Address selector ────────────────────────────────────────────────
-        root.addWidget(make_label("ADDRESS"))
-        root.addSpacing(4)
+        root.addWidget(make_label(self.tr("address")))
+        root.addSpacing(3)
         addr_row = QHBoxLayout()
         addr_row.setSpacing(6)
         self.address_selector = QComboBox()
-        self.address_selector.setFixedHeight(34)
+        self.address_selector.setFixedHeight(32)
         self.address_selector.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         addr_row.addWidget(self.address_selector)
-        addr_row.addWidget(make_copy_btn(self, self.get_selected_address))
+        addr_row.addWidget(make_copy_btn(self, self.get_selected_address, self.tr("copy_tooltip")))
         root.addLayout(addr_row)
-        root.addSpacing(8)
+        root.addSpacing(6)
 
         # ── Verify card ─────────────────────────────────────────────────────
         verify_frame = QFrame()
         verify_frame.setObjectName("card")
-        # Убрали жёсткое setFixedHeight/setMinimumHeight — фрейм сам
-        # растягивается по контенту, иначе при любом DPI элементы налезали друг на друга.
-        # setMaximumHeight — чтобы не отъедал место у табов ниже
-        verify_frame.setMaximumHeight(125)
+        verify_frame.setFixedHeight(130)
         vfl = QVBoxLayout(verify_frame)
         vfl.setContentsMargins(12, 10, 12, 10)
-        vfl.setSpacing(7)
+        vfl.setSpacing(5)
 
-        vf_title = QLabel("⚑  VERIFICATION")
-        vf_title.setStyleSheet("color:#8888bb;font-size:10px;letter-spacing:2px;text-transform:uppercase;")
-        vfl.addWidget(vf_title)
+        self.vf_title = QLabel(self.tr("verification"))
+        self.vf_title.setStyleSheet("color:#d1d5db;font-size:10px;letter-spacing:1px;text-transform:uppercase;")
+        self.vf_title.setFixedHeight(16)
+        vfl.addWidget(self.vf_title)
 
-        _TAG_SS  = "color:#555577;font-size:10px;letter-spacing:0px;text-transform:none;min-width:120px;max-width:120px;"
-        _VAL_SS  = "color:#aaaacc;font-size:10px;font-family:'Courier New';text-transform:none;letter-spacing:0px;"
-        _WIF_SS  = "color:#aaaacc;font-size:10px;font-family:'Courier New';text-transform:none;letter-spacing:0px;"
+        _TAG_SS  = "color:#9ca3af;font-size:10px;letter-spacing:0px;text-transform:none;min-width:115px;max-width:115px;"
+        _VAL_SS  = "color:#d1d5db;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+        _WIF_SS  = "color:#d1d5db;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
 
-        # Legacy row — убрали setFixedHeight чтобы не обрезало при HiDPI
-        lr = QHBoxLayout(); lr.setSpacing(4); lr.setContentsMargins(0, 0, 0, 0)
-        t = QLabel("Legacy (P2PKH):"); t.setStyleSheet(_TAG_SS)
-        t.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        # Legacy row
+        lr = QHBoxLayout(); lr.setSpacing(6); lr.setContentsMargins(0, 0, 0, 0)
+        self.lbl_legacy_tag = QLabel(self.tr("legacy")); self.lbl_legacy_tag.setStyleSheet(_TAG_SS)
+        self.lbl_legacy_tag.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         self.lbl_legacy_val = QLabel("—")
         self.lbl_legacy_val.setStyleSheet(_VAL_SS)
-        self.lbl_legacy_val.setMinimumHeight(18)
+        self.lbl_legacy_val.setMinimumHeight(20)
+        self.lbl_legacy_val.setWordWrap(False)
+        self.lbl_legacy_val.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_legacy_val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.lbl_legacy_ok = QLabel("")
-        self.lbl_legacy_ok.setFixedSize(16, 18)
-        lr.addWidget(t); lr.addWidget(self.lbl_legacy_val, 1)
+        self.lbl_legacy_ok.setFixedSize(16, 20)
+        lr.addWidget(self.lbl_legacy_tag)
+        lr.addWidget(self.lbl_legacy_val, 1)
         lr.addWidget(self.lbl_legacy_ok)
-        lr.addWidget(make_copy_btn(self, lambda: self.lbl_legacy_val.text()))
+        lr.addWidget(make_copy_btn(self, lambda: self.lbl_legacy_val.text(), self.tr("copy_tooltip")))
         vfl.addLayout(lr)
 
         # SegWit row
-        sr = QHBoxLayout(); sr.setSpacing(4); sr.setContentsMargins(0, 0, 0, 0)
-        t2 = QLabel("SegWit (bech32):"); t2.setStyleSheet(_TAG_SS)
-        t2.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        sr = QHBoxLayout(); sr.setSpacing(6); sr.setContentsMargins(0, 0, 0, 0)
+        self.lbl_segwit_tag = QLabel(self.tr("segwit")); self.lbl_segwit_tag.setStyleSheet(_TAG_SS)
+        self.lbl_segwit_tag.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         self.lbl_segwit_val = QLabel("—")
         self.lbl_segwit_val.setStyleSheet(_VAL_SS)
-        self.lbl_segwit_val.setMinimumHeight(18)
+        self.lbl_segwit_val.setMinimumHeight(20)
+        self.lbl_segwit_val.setWordWrap(False)
+        self.lbl_segwit_val.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_segwit_val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.lbl_segwit_ok = QLabel("")
-        self.lbl_segwit_ok.setFixedSize(16, 18)
-        sr.addWidget(t2); sr.addWidget(self.lbl_segwit_val, 1)
+        self.lbl_segwit_ok.setFixedSize(16, 20)
+        sr.addWidget(self.lbl_segwit_tag)
+        sr.addWidget(self.lbl_segwit_val, 1)
         sr.addWidget(self.lbl_segwit_ok)
-        sr.addWidget(make_copy_btn(self, lambda: self.lbl_segwit_val.text()))
+        sr.addWidget(make_copy_btn(self, lambda: self.lbl_segwit_val.text(), self.tr("copy_tooltip")))
         vfl.addLayout(sr)
 
-        # Key format + WIF — разделены горизонтально, минимальные высоты убраны
-        bot_row = QHBoxLayout(); bot_row.setSpacing(12); bot_row.setContentsMargins(0, 0, 0, 0)
-        kt_col = QVBoxLayout(); kt_col.setSpacing(2)
-        t3 = QLabel("Key format:"); t3.setStyleSheet(_TAG_SS)
+        # Key format + WIF row
+        bot_row = QHBoxLayout(); bot_row.setSpacing(14); bot_row.setContentsMargins(0, 0, 0, 0)
+        kt_col = QVBoxLayout(); kt_col.setSpacing(3)
+        self.lbl_key_format_tag = QLabel(self.tr("key_format")); self.lbl_key_format_tag.setStyleSheet(_TAG_SS)
+        self.lbl_key_format_tag.setFixedHeight(14)
         self.lbl_key_type = QLabel("—")
         self.lbl_key_type.setStyleSheet(
-            "color:#555577;font-size:10px;font-family:'Courier New';"
+            "color:#9ca3af;font-size:10px;font-family:'Courier New','Consolas',monospace;"
             "text-transform:none;letter-spacing:0px;"
         )
-        kt_col.addWidget(t3); kt_col.addWidget(self.lbl_key_type)
+        self.lbl_key_type.setMinimumHeight(18)
+        kt_col.addWidget(self.lbl_key_format_tag); kt_col.addWidget(self.lbl_key_type)
         bot_row.addLayout(kt_col)
 
-        wif_col = QVBoxLayout(); wif_col.setSpacing(2)
-        t4 = QLabel("WIF:"); t4.setStyleSheet(_TAG_SS)
-        wif_inner = QHBoxLayout(); wif_inner.setSpacing(4); wif_inner.setContentsMargins(0, 0, 0, 0)
+        wif_col = QVBoxLayout(); wif_col.setSpacing(3)
+        self.lbl_wif_tag = QLabel(self.tr("wif")); self.lbl_wif_tag.setStyleSheet(_TAG_SS)
+        self.lbl_wif_tag.setFixedHeight(14)
+        wif_inner = QHBoxLayout(); wif_inner.setSpacing(6); wif_inner.setContentsMargins(0, 0, 0, 0)
         self.lbl_wif_val = QLabel("—")
         self.lbl_wif_val.setStyleSheet(_WIF_SS)
-        self.lbl_wif_val.setMinimumHeight(16)
+        self.lbl_wif_val.setMinimumHeight(18)
+        self.lbl_wif_val.setWordWrap(False)
+        self.lbl_wif_val.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.lbl_wif_val.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         wif_inner.addWidget(self.lbl_wif_val, 1)
-        wif_inner.addWidget(make_copy_btn(self, lambda: self.lbl_wif_val.text()))
-        wif_col.addWidget(t4); wif_col.addLayout(wif_inner)
+        wif_inner.addWidget(make_copy_btn(self, lambda: self.lbl_wif_val.text(), self.tr("copy_tooltip")))
+        wif_col.addWidget(self.lbl_wif_tag); wif_col.addLayout(wif_inner)
         bot_row.addLayout(wif_col, 1)
         vfl.addLayout(bot_row)
 
         root.addWidget(verify_frame)
-        root.addSpacing(8)
+        root.addSpacing(6)
 
         # ── Balance ──────────────────────────────────────────────────────────
         bal_row = QHBoxLayout()
         bal_row.setSpacing(6)
         bal_left = QVBoxLayout(); bal_left.setSpacing(2)
-        bal_left.addWidget(make_label("BALANCE"))
+        bal_left.addWidget(make_label(self.tr("balance")))
         self.output_balance = QLabel("—")
         self.output_balance.setObjectName("value_label")
-        self.output_balance.setFixedHeight(28)
+        self.output_balance.setFixedHeight(24)
         bal_left.addWidget(self.output_balance)
         bal_row.addLayout(bal_left)
         bal_row.addStretch()
 
-        btn_bal = QPushButton("↻  CHECK BALANCE")
-        btn_bal.setFixedHeight(32)
-        btn_bal.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_bal.clicked.connect(self.check_balance)
-        bal_row.addWidget(btn_bal)
-        bal_row.addWidget(make_copy_btn(self, lambda: self.output_balance.text().replace(' BTC', '')))
+        self.btn_check_balance = QPushButton(self.tr("check_balance"))
+        self.btn_check_balance.setFixedHeight(30)
+        self.btn_check_balance.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_check_balance.clicked.connect(self.check_balance)
+        bal_row.addWidget(self.btn_check_balance)
+        bal_row.addWidget(make_copy_btn(self, lambda: self.output_balance.text().replace(' BTC', ''), self.tr("copy_tooltip")))
         root.addLayout(bal_row)
-        root.addSpacing(8)
+        root.addSpacing(6)
         root.addWidget(make_separator())
-        root.addSpacing(8)
+        root.addSpacing(6)
 
         # ── Tabs ─────────────────────────────────────────────────────────────
         tabs = QTabWidget()
         tabs.setDocumentMode(True)
-        # [FIX-UI] убрал setFixedHeight(300) — при нестандартном шрифте
-        # контент вылезал за границы или обрезался
-        tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        tabs.setMinimumHeight(280)
+        tabs.setFixedHeight(320)
+        tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # ── Tab 1: BROADCAST ─────────────────────────────────────────────────
         tab_send = QWidget()
         tsl = QVBoxLayout(tab_send)
-        tsl.setContentsMargins(6, 10, 6, 4)
-        tsl.setSpacing(4)
+        tsl.setContentsMargins(8, 10, 8, 6)
+        tsl.setSpacing(5)
 
-        tsl.addWidget(make_label("DESTINATION ADDRESS"))
-        self.input_dest_address = QLineEdit()
-        self.input_dest_address.setPlaceholderText("bc1q... or 1... or 3...")
-        self.input_dest_address.setFixedHeight(28)
-        tsl.addWidget(self.input_dest_address)
+        tsl.addWidget(make_label(self.tr("dest_addr")))
+        self.input_dest = QLineEdit()
+        self.input_dest.setPlaceholderText(self.tr("dest_placeholder"))
+        self.input_dest.setFixedHeight(30)
+        self.input_dest.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        tsl.addWidget(self.input_dest)
 
-        tsl.addWidget(make_label("AMOUNT (BTC)  —  комиссия вычитается из суммы"))
+        tsl.addWidget(make_label(self.tr("amount")))
         amt_row = QHBoxLayout(); amt_row.setSpacing(6)
         self.input_amount = QLineEdit()
-        self.input_amount.setPlaceholderText("0.00000000  (пусто = весь баланс)")
-        self.input_amount.setFixedHeight(28)
+        self.input_amount.setPlaceholderText(self.tr("amount_ph"))
+        self.input_amount.setFixedHeight(30)
+        self.input_amount.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.input_amount.textChanged.connect(self._recalc_net)
-        amt_row.addWidget(self.input_amount)
-        self.btn_max = QPushButton("MAX")
-        self.btn_max.setFixedSize(52, 28)
+        amt_row.addWidget(self.input_amount, 1)
+        self.btn_max = QPushButton(self.tr("max"))
+        self.btn_max.setFixedSize(52, 30)
         self.btn_max.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_max.clicked.connect(self._fill_max_amount)
         amt_row.addWidget(self.btn_max)
         tsl.addLayout(amt_row)
 
-        tsl.addWidget(make_label("FEE (SAT/BYTE)"))
+        tsl.addWidget(make_label(self.tr("fee")))
         fee_row = QHBoxLayout(); fee_row.setSpacing(6)
         self.input_fee = QLineEdit()
-        self.input_fee.setPlaceholderText("напр. 20")
-        self.input_fee.setFixedHeight(28)
+        self.input_fee.setPlaceholderText(self.tr("fee_ph"))
+        self.input_fee.setFixedHeight(30)
+        self.input_fee.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.input_fee.textChanged.connect(self._recalc_net)
-        fee_row.addWidget(self.input_fee)
-        self.btn_suggest_fee = QPushButton("⚡ SUGGEST")
-        self.btn_suggest_fee.setFixedHeight(28)
+        fee_row.addWidget(self.input_fee, 1)
+        self.btn_suggest_fee = QPushButton(self.tr("suggest"))
+        self.btn_suggest_fee.setFixedHeight(30)
+        self.btn_suggest_fee.setMinimumWidth(80)
+        self.btn_suggest_fee.setMaximumWidth(110)
         self.btn_suggest_fee.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_suggest_fee.clicked.connect(self.suggest_fee)
         fee_row.addWidget(self.btn_suggest_fee)
         tsl.addLayout(fee_row)
 
-        self.lbl_net_send = QLabel("К отправке: —  |  Комиссия: —")
+        self.lbl_net_send = QLabel(self.tr("net_send_placeholder"))
         self.lbl_net_send.setFixedHeight(14)
         self.lbl_net_send.setStyleSheet(
-            "color:#555577;font-size:10px;letter-spacing:0px;"
+            "color:#9ca3af;font-size:10px;letter-spacing:0px;"
             "text-transform:none;padding:0px;"
         )
         tsl.addWidget(self.lbl_net_send)
 
-        self.btn_send = QPushButton("▶  BROADCAST TRANSACTION")
+        self.btn_send = QPushButton(self.tr("broadcast"))
         self.btn_send.setObjectName("danger_btn")
         self.btn_send.setFixedHeight(30)
         self.btn_send.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_send.clicked.connect(self.send_transaction)
         tsl.addWidget(self.btn_send)
 
-        tsl.addWidget(make_label("TXID"))
+        tsl.addWidget(make_label(self.tr("txid")))
         txid_row = QHBoxLayout(); txid_row.setSpacing(6)
         self.output_txid = QLabel("—")
-        self.output_txid.setFixedHeight(28)
+        self.output_txid.setFixedHeight(26)
         self.output_txid.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.output_txid.setStyleSheet(
-            "color:#f7931a;font-size:11px;font-family:'Courier New';"
-            "padding:4px 8px;background:#080810;"
-            "border:1px solid #1a1a2e;border-radius:6px;"
+            "color:#fbbf24;font-size:10px;font-family:'Courier New','Consolas',monospace;"
+            "padding:4px 8px;background:#0b0e13;"
+            "border:1px solid #2a2d35;border-radius:5px;"
         )
-        txid_row.addWidget(self.output_txid)
-        txid_row.addWidget(make_copy_btn(self, lambda: self._last_txid))
+        txid_row.addWidget(self.output_txid, 1)
+        txid_row.addWidget(make_copy_btn(self, lambda: self._last_txid, self.tr("copy_tooltip")))
         tsl.addLayout(txid_row)
         tsl.addStretch()
 
         # ── Tab 2: OFFLINE / RAW HEX ─────────────────────────────────────────
         tab_offline = QWidget()
         tol = QVBoxLayout(tab_offline)
-        tol.setContentsMargins(6, 10, 6, 4)
-        tol.setSpacing(4)
+        tol.setContentsMargins(8, 10, 8, 6)
+        tol.setSpacing(5)
 
-        info = QLabel("Build signed TX without broadcasting. Paste HEX → mempool.space/tx/push")
-        info.setFixedHeight(14)
-        info.setStyleSheet("color:#555577;font-size:10px;text-transform:none;letter-spacing:0px;")
-        tol.addWidget(info)
+        self.lbl_offline_info = QLabel(self.tr("offline_info"))
+        self.lbl_offline_info.setFixedHeight(14)
+        self.lbl_offline_info.setStyleSheet("color:#9ca3af;font-size:10px;text-transform:none;letter-spacing:0px;")
+        tol.addWidget(self.lbl_offline_info)
 
-        tol.addWidget(make_label("DESTINATION ADDRESS"))
+        tol.addWidget(make_label(self.tr("dest_addr")))
         self.input_dest_offline = QLineEdit()
-        self.input_dest_offline.setPlaceholderText("bc1q... or 1... or 3...")
-        self.input_dest_offline.setFixedHeight(28)
+        self.input_dest_offline.setPlaceholderText(self.tr("dest_addr_ph"))
+        self.input_dest_offline.setFixedHeight(30)
+        self.input_dest_offline.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         tol.addWidget(self.input_dest_offline)
 
-        tol.addWidget(make_label("AMOUNT (BTC)  —  комиссия вычитается из суммы"))
+        tol.addWidget(make_label(self.tr("amount")))
         amt_off_row = QHBoxLayout(); amt_off_row.setSpacing(6)
         self.input_amount_offline = QLineEdit()
-        self.input_amount_offline.setPlaceholderText("0.00000000  (пусто = весь баланс)")
-        self.input_amount_offline.setFixedHeight(28)
+        self.input_amount_offline.setPlaceholderText(self.tr("amount_ph"))
+        self.input_amount_offline.setFixedHeight(30)
+        self.input_amount_offline.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.input_amount_offline.textChanged.connect(self._recalc_net_offline)
-        amt_off_row.addWidget(self.input_amount_offline)
-        self.btn_max_offline = QPushButton("MAX")
-        self.btn_max_offline.setFixedSize(52, 28)
+        amt_off_row.addWidget(self.input_amount_offline, 1)
+        self.btn_max_offline = QPushButton(self.tr("max"))
+        self.btn_max_offline.setFixedSize(52, 30)
         self.btn_max_offline.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_max_offline.clicked.connect(self._fill_max_amount_offline)
         amt_off_row.addWidget(self.btn_max_offline)
         tol.addLayout(amt_off_row)
 
-        tol.addWidget(make_label("FEE (SAT/BYTE)"))
+        tol.addWidget(make_label(self.tr("fee")))
         fee_off_row = QHBoxLayout(); fee_off_row.setSpacing(6)
         self.input_fee_offline = QLineEdit()
-        self.input_fee_offline.setPlaceholderText("напр. 20")
-        self.input_fee_offline.setFixedHeight(28)
+        self.input_fee_offline.setPlaceholderText(self.tr("fee_ph"))
+        self.input_fee_offline.setFixedHeight(30)
+        self.input_fee_offline.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.input_fee_offline.textChanged.connect(self._recalc_net_offline)
-        fee_off_row.addWidget(self.input_fee_offline)
-        self.btn_suggest_fee2 = QPushButton("⚡ SUGGEST")
-        self.btn_suggest_fee2.setFixedHeight(28)
+        fee_off_row.addWidget(self.input_fee_offline, 1)
+        self.btn_suggest_fee2 = QPushButton(self.tr("suggest"))
+        self.btn_suggest_fee2.setFixedHeight(30)
+        self.btn_suggest_fee2.setMinimumWidth(80)
+        self.btn_suggest_fee2.setMaximumWidth(110)
         self.btn_suggest_fee2.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_suggest_fee2.clicked.connect(self.suggest_fee_offline)
         fee_off_row.addWidget(self.btn_suggest_fee2)
         tol.addLayout(fee_off_row)
 
-        self.lbl_net_offline = QLabel("К отправке: —  |  Комиссия: —")
+        self.lbl_net_offline = QLabel(self.tr("net_send_placeholder"))
         self.lbl_net_offline.setFixedHeight(14)
         self.lbl_net_offline.setStyleSheet(
-            "color:#555577;font-size:10px;letter-spacing:0px;"
+            "color:#9ca3af;font-size:10px;letter-spacing:0px;"
             "text-transform:none;padding:0px;"
         )
         tol.addWidget(self.lbl_net_offline)
 
-        self.btn_build = QPushButton("⬡  BUILD RAW TX  (NO BROADCAST)")
+        self.btn_build = QPushButton(self.tr("build_raw"))
         self.btn_build.setObjectName("primary_btn")
         self.btn_build.setFixedHeight(30)
         self.btn_build.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_build.clicked.connect(self.build_raw_tx)
         tol.addWidget(self.btn_build)
 
-        tol.addWidget(make_label("RAW HEX (SIGNED TX)"))
+        tol.addWidget(make_label(self.tr("raw_hex")))
         raw_row = QHBoxLayout(); raw_row.setSpacing(6)
         self.output_raw = QTextEdit()
         self.output_raw.setReadOnly(True)
-        self.output_raw.setFixedHeight(56)
-        self.output_raw.setPlaceholderText("Signed transaction hex will appear here...")
-        raw_row.addWidget(self.output_raw)
-        raw_row.addWidget(make_copy_btn(self, lambda: self._last_raw_hex))
+        self.output_raw.setFixedHeight(70)
+        self.output_raw.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.output_raw.setPlaceholderText(self.tr("raw_hex_ph"))
+        raw_row.addWidget(self.output_raw, 1)
+        raw_row.addWidget(make_copy_btn(self, lambda: self._last_raw_hex, self.tr("copy_tooltip")))
         tol.addLayout(raw_row)
         tol.addStretch()
 
-        tabs.addTab(tab_send,    "BROADCAST")
-        tabs.addTab(tab_offline, "OFFLINE / RAW HEX")
-        root.addWidget(tabs, 1)   # stretch=1 — tabs забирают свободное пространство
-        root.addSpacing(8)
+        tabs.addTab(tab_send,    self.tr("tab_broadcast"))
+        tabs.addTab(tab_offline, self.tr("tab_offline"))
+        root.addWidget(tabs)
+        root.addSpacing(6)
 
         # ── Log ──────────────────────────────────────────────────────────────
         log_hdr = QHBoxLayout()
-        log_hdr.addWidget(make_label("LOG"))
+        log_hdr.setSpacing(6)
+        log_hdr.addWidget(make_label(self.tr("log")))
         log_hdr.addStretch()
-        btn_clear = QPushButton("✕ CLEAR")
-        btn_clear.setFixedHeight(24)
-        btn_clear.setCursor(Qt.CursorShape.PointingHandCursor)
-        btn_clear.clicked.connect(lambda: self.log_output.clear())
-        log_hdr.addWidget(btn_clear)
-        log_hdr.addWidget(make_copy_btn(self, lambda: self.log_output.toPlainText()))
+        self.btn_clear_log = QPushButton(self.tr("clear"))
+        self.btn_clear_log.setFixedHeight(24)
+        self.btn_clear_log.setMinimumWidth(70)
+        self.btn_clear_log.setMaximumWidth(90)
+        self.btn_clear_log.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.btn_clear_log.clicked.connect(lambda: self.log_output.clear())
+        log_hdr.addWidget(self.btn_clear_log)
+        log_hdr.addWidget(make_copy_btn(self, lambda: self.log_output.toPlainText(), self.tr("copy_tooltip")))
         root.addLayout(log_hdr)
-        root.addSpacing(4)
+        root.addSpacing(3)
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
-        self.log_output.setMinimumHeight(100)
-        self.log_output.setMaximumHeight(130)
+        self.log_output.setFixedHeight(110)
+        self.log_output.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         root.addWidget(self.log_output)
+
+        # Store references to tabs for refresh_ui_text
+        self.tabs = tabs
+
+        # Apply theme after all UI elements are created
+        self.apply_theme()
 
     # ────────────────────────────────────────────────────────────────────────
     # HELPERS
@@ -811,7 +1385,7 @@ class BTCTransactionApp(QWidget):
             self.lbl_segwit_ok.setStyleSheet("color:#44ff88;font-size:13px;padding:0;")
             self.lbl_key_type.setText(fmt)
             self.lbl_key_type.setStyleSheet(
-                "color:#f7931a;font-size:10px;font-family:'Courier New';"
+                "color:#fbbf24;font-size:10px;font-family:'Courier New','Consolas',monospace;"
                 "text-transform:none;letter-spacing:0px;"
             )
             wif = key.to_wif()
@@ -829,7 +1403,7 @@ class BTCTransactionApp(QWidget):
             self.lbl_segwit_ok.setStyleSheet("color:#ff4444;font-size:13px;padding:0;")
             self.lbl_key_type.setText("ERROR")
             self.lbl_key_type.setStyleSheet(
-                "color:#ff4444;font-size:10px;font-family:'Courier New';"
+                "color:#ef4444;font-size:10px;font-family:'Courier New','Consolas',monospace;"
                 "text-transform:none;letter-spacing:0px;"
             )
             self.log_error(f"recover_addresses: {e}")
@@ -880,29 +1454,54 @@ class BTCTransactionApp(QWidget):
         )
 
     def _recalc_net_label(self, amt_input, fee_input, label):
+        """
+        Preview: показывает что получит адресат и сколько спишется с баланса
+        - Получатель получит: amount_btc (как введено в поле)
+        - С баланса спишется: amount_btc + fee
+        """
         try:
-            amt_btc  = float(amt_input.text().strip() or "0")
-            fee_pb   = int(fee_input.text().strip() or "0")
+            amt_btc = float(amt_input.text().strip() or "0")
+            fee_pb = int(fee_input.text().strip() or "0")
             fee_sats = self._estimated_fee_sats(fee_pb)
-            net_sats = int(amt_btc * 1e8) - fee_sats
-            n        = self._utxo_count
-            note     = f" ({n} UTXO)" if n > 1 else ""
-            if net_sats > 0:
-                label.setText(
-                    f"<span style='color:#e8e8f0'>К отправке: </span>"
-                    f"<span style='color:#44ff88'>{net_sats/1e8:.8f} BTC</span>"
-                    f"  <span style='color:#444466'>|</span>  "
-                    f"<span style='color:#e8e8f0'>Комиссия: </span>"
-                    f"<span style='color:#f7931a'>{fee_sats} sat{note}</span>"
-                )
+            n = self._utxo_count
+            note = f" ({n} UTXO)" if n > 1 else ""
+
+            if amt_btc == 0:
+                # MAX режим: отправится весь баланс минус комиссия
+                if self._balance_sats is not None:
+                    send_sats = self._balance_sats - fee_sats
+                    if send_sats > 546:
+                        label.setText(
+                            f"<span style='color:#e8e8f0'>Получит адресат: </span>"
+                            f"<span style='color:#44ff88'>{send_sats/1e8:.8f} BTC</span>"
+                            f"  <span style='color:#444466'>|</span>  "
+                            f"<span style='color:#e8e8f0'>Комиссия: </span>"
+                            f"<span style='color:#f7931a'>{fee_sats} sat{note}</span>"
+                        )
+                    else:
+                        label.setText("<span style='color:#ff4444'>Недостаточно для покрытия комиссии</span>")
+                else:
+                    label.setText("<span style='color:#444466'>Нажми CHECK BALANCE для расчёта MAX</span>")
             else:
-                label.setText(
-                    "<span style='color:#ff4444'>Недостаточно для покрытия комиссии</span>"
-                )
+                # Пользователь ввёл сумму: она и уйдёт получателю
+                send_sats = int(amt_btc * 1e8)
+                required_total = send_sats + fee_sats
+
+                if self._balance_sats is not None and required_total > self._balance_sats:
+                    label.setText(
+                        f"<span style='color:#ff4444'>Недостаточно: нужно {required_total} sat, "
+                        f"баланс {self._balance_sats} sat</span>"
+                    )
+                else:
+                    label.setText(
+                        f"<span style='color:#e8e8f0'>Получит адресат: </span>"
+                        f"<span style='color:#44ff88'>{send_sats/1e8:.8f} BTC</span>"
+                        f"  <span style='color:#444466'>|</span>  "
+                        f"<span style='color:#e8e8f0'>Комиссия: </span>"
+                        f"<span style='color:#f7931a'>{fee_sats} sat{note}</span>"
+                    )
         except Exception:
-            label.setText(
-                "<span style='color:#444466'>К отправке: —  |  Комиссия: —</span>"
-            )
+            label.setText("<span style='color:#444466'>К отправке: —  |  Комиссия: —</span>")
 
     # ── MAX fill ─────────────────────────────────────────────────────────────
 
@@ -959,25 +1558,38 @@ class BTCTransactionApp(QWidget):
     # ── TX build ──────────────────────────────────────────────────────────────
 
     def _build_tx(self, key, from_address, dest_address, fee_per_byte, amount_btc=None):
-        utxos          = self._get_utxos(from_address)
+        """
+        Построение транзакции с корректной логикой комиссии:
+        - Комиссия ВСЕГДА вычитается из текущего баланса
+        - amount_btc — это сколько ПОЛУЧИТ получатель (без комиссии)
+        - Если amount_btc=None → отправить весь баланс минус комиссия
+        """
+        utxos = self._get_utxos(from_address)
         if not utxos:
             raise ValueError("Нет доступных UTXO")
-        total_sats     = sum(u["value"] for u in utxos)
+
+        total_sats = sum(u["value"] for u in utxos)
         estimated_size = 180 * len(utxos) + 34 + 10
-        fee            = estimated_size * fee_per_byte
+        fee = estimated_size * fee_per_byte
 
         if amount_btc is None:
+            # MAX: отправить весь баланс минус комиссия
             send_amount = total_sats - fee
         else:
-            send_amount = int(amount_btc * 1e8) - fee
+            # Пользователь указал сумму → это то, что ПОЛУЧИТ адресат
+            # Проверяем, хватает ли баланса на (amount + fee)
+            send_amount = int(amount_btc * 1e8)
+            required_total = send_amount + fee
+
+            if required_total > total_sats:
+                raise ValueError(
+                    f"Недостаточно средств: нужно {required_total} sat "
+                    f"({send_amount} + {fee} комиссия), баланс {total_sats} sat"
+                )
 
         if send_amount <= 546:
             raise ValueError(
-                f"Недостаточно после комиссии: {send_amount} sat (dust limit = 546)"
-            )
-        if send_amount > total_sats - fee:
-            raise ValueError(
-                f"Сумма превышает баланс: max={(total_sats - fee)/1e8:.8f} BTC"
+                f"Сумма к отправке {send_amount} sat меньше dust limit (546 sat)"
             )
 
         tx = key.create_transaction(
@@ -990,7 +1602,7 @@ class BTCTransactionApp(QWidget):
     def send_transaction(self):
         try:
             key      = self._get_key()
-            dest     = self.input_dest_address.text().strip()
+            dest     = self.input_dest.text().strip()
             fee_str  = self.input_fee.text().strip()
             amt_str  = self.input_amount.text().strip()
 
@@ -1003,18 +1615,30 @@ class BTCTransactionApp(QWidget):
             amount_btc   = float(amt_str) if amt_str else None
             from_address = self.get_selected_address()
 
-            utxos       = self._get_utxos(from_address)
-            total_btc   = sum(u["value"] for u in utxos) / 1e8
-            send_label  = f"{amount_btc:.8f} BTC" if amount_btc else f"{total_btc:.8f} BTC (MAX)"
+            utxos = self._get_utxos(from_address)
+            total_sats = sum(u["value"] for u in utxos)
+            estimated_size = 180 * len(utxos) + 34 + 10
+            fee = estimated_size * fee_per_byte
+
+            if amount_btc is None:
+                send_amount = total_sats - fee
+                total_debit = total_sats
+                send_label = f"{send_amount/1e8:.8f} BTC (весь баланс минус комиссия)"
+            else:
+                send_amount = int(amount_btc * 1e8)
+                total_debit = send_amount + fee
+                send_label = f"{send_amount/1e8:.8f} BTC"
 
             confirm = QMessageBox(self)
-            confirm.setWindowTitle("ПОДТВЕРЖДЕНИЕ")
+            confirm.setWindowTitle("⚠ ПОДТВЕРЖДЕНИЕ ОТПРАВКИ")
             confirm.setText(
-                f"Подтвердить транзакцию?\n\n"
-                f"  От:     {from_address[:28]}…\n"
-                f"  Кому:   {dest[:28]}…\n"
-                f"  Сумма:  {send_label}\n"
-                f"  Fee:    {fee_per_byte} sat/byte"
+                f"ВНИМАНИЕ: Транзакция будет немедленно отправлена в сеть Bitcoin!\n\n"
+                f"  От:                {from_address[:32]}…\n"
+                f"  Кому:              {dest[:32]}…\n"
+                f"  Получит адресат:   {send_label}\n"
+                f"  Комиссия:          {fee} sat ({fee_per_byte} sat/byte)\n"
+                f"  Спишется с баланса: {total_debit/1e8:.8f} BTC\n\n"
+                f"Подтвердить отправку?"
             )
             confirm.setStyleSheet(DARK_STYLE)
             confirm.setStandardButtons(
@@ -1064,16 +1688,162 @@ class BTCTransactionApp(QWidget):
             self._last_raw_hex = tx_hex
             self.output_raw.setPlainText(tx_hex)
 
-            self.log_ok("Raw TX built (NOT broadcast)")
+            self.log_ok("✓ Raw TX построена (НЕ отправлена в сеть)")
             self.log_msg(
-                f"Total: {total_sats/1e8:.8f} BTC  |  "
-                f"Fee: {fee} sat  |  Send: {send_amount/1e8:.8f} BTC"
+                f"Получит адресат: {send_amount/1e8:.8f} BTC  |  "
+                f"Комиссия: {fee} sat  |  "
+                f"Баланс: {total_sats/1e8:.8f} BTC"
             )
-            self.log_msg(f"Size: {len(tx_hex)//2} bytes")
-            self.log_msg("→ Вставь hex на mempool.space/tx/push")
+            self.log_msg(f"Размер TX: {len(tx_hex)//2} байт")
+            self.log_msg("⚠ Для отправки: mempool.space/tx/push ИЛИ через mining pool")
+            self.log_msg("→ HEX скопирован в буфер (нажми ⎘ справа)")
 
         except Exception as e:
             self.log_error(f"build_raw_tx: {e}")
+
+    # ── Theme & Language ──────────────────────────────────────────────────────
+
+    def change_theme_by_index(self, index):
+        self.current_theme = "dark" if index == 0 else "light"
+        self.settings.setValue("theme", self.current_theme)
+        self.apply_theme()
+
+    def change_language_by_index(self, index):
+        self.current_lang = "ru" if index == 0 else "en"
+        self.settings.setValue("language", self.current_lang)
+        self.refresh_ui_text()
+
+    def refresh_ui_text(self):
+        """Update all UI text elements to current language without restart."""
+        self.setWindowTitle(self.tr("app_title"))
+
+        # Update buttons
+        self.btn_help.setToolTip(self.tr("help"))
+        self.btn_show_key.setToolTip(self.tr("copy_tooltip"))
+        self.btn_recover.setText(self.tr("recover"))
+
+        # Verification card
+        self.vf_title.setText(self.tr("verification"))
+        self.lbl_legacy_tag.setText(self.tr("legacy"))
+        self.lbl_segwit_tag.setText(self.tr("segwit"))
+        self.lbl_wif_tag.setText(self.tr("wif"))
+
+        # Balance section
+        self.btn_check_balance.setText(self.tr("check_balance"))
+
+        # Tabs
+        self.tabs.setTabText(0, self.tr("tab_broadcast"))
+        self.tabs.setTabText(1, self.tr("tab_offline"))
+
+        # Send tab
+        self.btn_max.setText(self.tr("max"))
+        self.btn_suggest_fee.setText(self.tr("suggest"))
+        self.btn_send.setText(self.tr("btn_send"))
+
+        # Offline tab
+        self.btn_max_offline.setText(self.tr("max"))
+        self.btn_suggest_fee2.setText(self.tr("suggest"))
+        self.btn_build.setText(self.tr("build_raw"))
+
+        # Log
+        self.btn_clear_log.setText(self.tr("clear"))
+
+        # Update placeholders
+        self.input_priv_key.setPlaceholderText(self.tr("priv_key_ph"))
+        self.input_dest.setPlaceholderText(self.tr("dest_placeholder"))
+        self.input_amount.setPlaceholderText(self.tr("amount_placeholder"))
+        self.input_fee.setPlaceholderText(self.tr("fee_ph"))
+        self.input_dest_offline.setPlaceholderText(self.tr("dest_placeholder"))
+        self.input_amount_offline.setPlaceholderText(self.tr("amount_placeholder"))
+        self.input_fee_offline.setPlaceholderText(self.tr("fee_ph"))
+        self.output_raw.setPlaceholderText(self.tr("raw_hex_ph"))
+
+    def apply_theme(self):
+        if self.current_theme == "dark":
+            self.setStyleSheet(DARK_STYLE)
+            # Verification frame inline styles for dark theme
+            _TAG_SS  = "color:#9ca3af;font-size:10px;letter-spacing:0px;text-transform:none;"
+            _VAL_SS  = "color:#d1d5db;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+            _WIF_SS  = "color:#d1d5db;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+            _KEY_SS  = "color:#9ca3af;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+            _TITLE_SS = "color:#d1d5db;font-size:10px;letter-spacing:1px;text-transform:uppercase;"
+            _TXID_SS = "color:#fbbf24;font-size:10px;font-family:'Courier New','Consolas',monospace;padding:4px 8px;background:#0b0e13;border:1px solid #2a2d35;border-radius:5px;"
+            _NET_SS = "color:#9ca3af;font-size:10px;letter-spacing:0px;text-transform:none;padding:0px;"
+            _OFFLINE_INFO_SS = "color:#9ca3af;font-size:10px;text-transform:none;letter-spacing:0px;"
+        else:
+            self.setStyleSheet(LIGHT_STYLE)
+            # Verification frame inline styles for light theme
+            _TAG_SS  = "color:#6B6B6B;font-size:10px;letter-spacing:0px;text-transform:none;"
+            _VAL_SS  = "color:#1A1A1A;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+            _WIF_SS  = "color:#1A1A1A;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+            _KEY_SS  = "color:#6B6B6B;font-size:10px;font-family:'Courier New','Consolas',monospace;text-transform:none;letter-spacing:0px;"
+            _TITLE_SS = "color:#1A1A1A;font-size:10px;letter-spacing:1px;text-transform:uppercase;"
+            _TXID_SS = "color:#00A8CC;font-size:10px;font-family:'Courier New','Consolas',monospace;padding:4px 8px;background:#F5F5F5;border:1px solid #D1D1D1;border-radius:5px;"
+            _NET_SS = "color:#6B6B6B;font-size:10px;letter-spacing:0px;text-transform:none;padding:0px;"
+            _OFFLINE_INFO_SS = "color:#6B6B6B;font-size:10px;text-transform:none;letter-spacing:0px;"
+
+        # Update verification frame styles
+        self.vf_title.setStyleSheet(_TITLE_SS)
+        self.lbl_legacy_tag.setStyleSheet(_TAG_SS)
+        self.lbl_legacy_val.setStyleSheet(_VAL_SS)
+        self.lbl_segwit_tag.setStyleSheet(_TAG_SS)
+        self.lbl_segwit_val.setStyleSheet(_VAL_SS)
+        self.lbl_key_format_tag.setStyleSheet(_TAG_SS)
+        self.lbl_key_type.setStyleSheet(_KEY_SS)
+        self.lbl_wif_tag.setStyleSheet(_TAG_SS)
+        self.lbl_wif_val.setStyleSheet(_WIF_SS)
+
+        # Update TXID output styles
+        self.output_txid.setStyleSheet(_TXID_SS)
+
+        # Update net send labels
+        self.lbl_net_send.setStyleSheet(_NET_SS)
+        self.lbl_net_offline.setStyleSheet(_NET_SS)
+
+        # Update offline info
+        self.lbl_offline_info.setStyleSheet(_OFFLINE_INFO_SS)
+
+    def show_help(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.tr("help_title"))
+        dialog.setWindowIcon(get_app_icon())
+        dialog.setFixedSize(522, 589)
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(10)
+
+        content = QLabel(self.tr("help_content"))
+        content.setWordWrap(True)
+        content.setTextFormat(Qt.TextFormat.RichText)
+        content.setOpenExternalLinks(True)
+
+        # Adaptive text color based on theme
+        text_color = "#e8eaed" if self.current_theme == "dark" else "#1A1A1A"
+        content.setStyleSheet(
+            f"line-height: 1.5; font-size: 11px; color: {text_color};"
+            "padding: 0px; margin: 0px;"
+        )
+        content.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        content.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse |
+            Qt.TextInteractionFlag.LinksAccessibleByMouse
+        )
+        layout.addWidget(content)
+
+        btn_close = QPushButton("OK")
+        btn_close.setObjectName("primary_btn")
+        btn_close.setFixedHeight(32)
+        btn_close.setCursor(Qt.CursorShape.PointingHandCursor)
+        btn_close.clicked.connect(dialog.close)
+        layout.addWidget(btn_close)
+
+        if self.current_theme == "dark":
+            dialog.setStyleSheet(DARK_STYLE)
+        else:
+            dialog.setStyleSheet(LIGHT_STYLE)
+
+        dialog.exec()
 
 
 if __name__ == '__main__':
