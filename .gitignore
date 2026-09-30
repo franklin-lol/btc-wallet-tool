@@ -209,3 +209,26 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ── Project-specific ──────────────────────────────────────────────
+# App runtime artifacts
+btc_transaction.log
+*.sqlite3
+*.db
+
+# Working / scratch files
+.plan.md
+*_NEW.py
+screenshots/
+*.tmp
+
+# Icon sources (generated artifact is compiled into icon.py)
+create_icon.py
+btc_icon.py
+icon.png
+icon.svg
+
+# Stray editor/tool dumps (random-suffixed screenshots: chrome_xYz123.png, python_xYz123.png)
+chrome_*.png
+python_*.png
+*.tmp

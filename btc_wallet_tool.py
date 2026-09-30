@@ -13,11 +13,6 @@ import logging
 from translations import get_translation
 from icon import get_app_icon
 
-# ── Отключаем авто-масштабирование Qt — должно быть ДО создания QApplication ──
-os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "0"
-os.environ["QT_SCALE_FACTOR"] = "1"
-os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
-
 logging.basicConfig(
     filename='btc_transaction.log',
     level=logging.INFO,
@@ -177,7 +172,6 @@ QTabBar::tab {
     border: none;
     font-size: 10px;
     letter-spacing: 1px;
-    text-transform: uppercase;
     min-width: 80px;
 }
 
@@ -196,7 +190,6 @@ QLabel {
     color: #d1d5db;
     font-size: 10px;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
     padding-bottom: 2px;
 }
 
@@ -256,7 +249,6 @@ QPushButton {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 10px;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
 }
 
 QPushButton:hover {
@@ -315,11 +307,8 @@ QPushButton#copy_btn {
     padding: 3px 5px;
     font-size: 9px;
     border-radius: 4px;
-    min-width: 42px;
-    max-width: 42px;
+    min-width: 64px;
     min-height: 26px;
-    max-height: 26px;
-    text-transform: none;
     letter-spacing: 0px;
 }
 
@@ -377,7 +366,7 @@ QFrame#card {
     background-color: #171a23;
     border: 1px solid #2a2d35;
     border-radius: 8px;
-    padding: 10px;
+    padding: 0px;
 }
 
 QMessageBox {
@@ -447,7 +436,6 @@ QTabBar::tab {
     border: none;
     font-size: 10px;
     letter-spacing: 1px;
-    text-transform: uppercase;
     min-width: 80px;
 }
 
@@ -466,7 +454,6 @@ QLabel {
     color: #1A1A1A;
     font-size: 10px;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
     padding-bottom: 2px;
 }
 
@@ -526,7 +513,6 @@ QPushButton {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     font-size: 10px;
     letter-spacing: 0.5px;
-    text-transform: uppercase;
 }
 
 QPushButton:hover {
@@ -585,11 +571,8 @@ QPushButton#copy_btn {
     padding: 3px 5px;
     font-size: 9px;
     border-radius: 4px;
-    min-width: 42px;
-    max-width: 42px;
+    min-width: 64px;
     min-height: 26px;
-    max-height: 26px;
-    text-transform: none;
     letter-spacing: 0px;
 }
 
@@ -647,7 +630,7 @@ QFrame#card {
     background-color: #F5F5F5;
     border: 1px solid #D1D1D1;
     border-radius: 8px;
-    padding: 10px;
+    padding: 0px;
 }
 
 QMessageBox {
@@ -728,23 +711,40 @@ def make_separator():
 
 def make_label(text):
     lbl = QLabel(text)
-    lbl.setFixedHeight(16)
+    lbl.setMinimumHeight(16)
     return lbl
 
 
 def make_copy_btn(parent, get_text_fn, tooltip_text="Копировать"):
-    btn = QPushButton("Copy")
+    """Create compact round copy icon button"""
+    btn = QPushButton("⎘")
     btn.setObjectName("copy_btn")
     btn.setToolTip(tooltip_text)
     btn.setCursor(Qt.CursorShape.PointingHandCursor)
-    btn.setFixedSize(42, 26)
+    btn.setFixedSize(20, 20)
+    btn.setStyleSheet("""
+        QPushButton#copy_btn {
+            background-color: transparent;
+            color: #6b7280;
+            border: none;
+            border-radius: 10px;
+            font-size: 11px;
+            padding: 0px;
+        }
+        QPushButton#copy_btn:hover {
+            color: #fbbf24;
+            background-color: #1a1d26;
+        }
+    """)
+
+    btn._parent_widget = parent
 
     def do_copy():
         val = get_text_fn() if callable(get_text_fn) else get_text_fn
         if val and val not in ('-', '', ' '):
             QApplication.clipboard().setText(val)
             btn.setText("✓")
-            QTimer.singleShot(1200, lambda: btn.setText("Copy"))
+            QTimer.singleShot(1200, lambda: btn.setText("⎘"))
 
     btn.clicked.connect(do_copy)
     return btn
@@ -785,6 +785,7 @@ class BTCTransactionApp(QWidget):
         self._balance_sats   = None
         self._utxo_count     = 1
         self._workers        = []
+        self._copy_buttons   = []  # Track all copy buttons for language updates
 
         # Settings
         self.settings = QSettings("FranklinSys", "BTCWalletTool")
@@ -816,7 +817,7 @@ class BTCTransactionApp(QWidget):
     def initUI(self):
         self.setWindowTitle(self.tr("app_title"))
         self.setWindowIcon(get_app_icon())
-        self.setFixedSize(720, 861)
+        self.setMinimumWidth(648)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 12, 16, 12)
@@ -830,10 +831,10 @@ class BTCTransactionApp(QWidget):
         title_col.setSpacing(0)
         title = QLabel("BITCOIN WALLET TOOL")
         title.setObjectName("title_label")
-        title.setFixedHeight(22)
+        title.setMinimumHeight(22)
         sub = QLabel("SECURE OFFLINE TRANSACTION BUILDER")
         sub.setObjectName("sub_label")
-        sub.setFixedHeight(12)
+        sub.setMinimumHeight(12)
         title_col.addWidget(title)
         title_col.addWidget(sub)
         header_row.addLayout(title_col, 1)
@@ -929,7 +930,7 @@ class BTCTransactionApp(QWidget):
         key_row.addWidget(self.input_priv_key, 1)
         self.btn_show_key = QPushButton("👁")
         self.btn_show_key.setObjectName("copy_btn")
-        self.btn_show_key.setFixedSize(30, 30)
+        self.btn_show_key.setStyleSheet('min-width:30px;max-width:30px;min-height:30px;max-height:30px;padding:0;')
         self.btn_show_key.setToolTip(self.tr("copy_tooltip"))
         self.btn_show_key.setCursor(Qt.CursorShape.PointingHandCursor)
         self.btn_show_key.clicked.connect(self.toggle_key_visibility)
@@ -963,14 +964,13 @@ class BTCTransactionApp(QWidget):
         # ── Verify card ─────────────────────────────────────────────────────
         verify_frame = QFrame()
         verify_frame.setObjectName("card")
-        verify_frame.setFixedHeight(130)
         vfl = QVBoxLayout(verify_frame)
         vfl.setContentsMargins(12, 10, 12, 10)
         vfl.setSpacing(5)
 
         self.vf_title = QLabel(self.tr("verification"))
-        self.vf_title.setStyleSheet("color:#d1d5db;font-size:10px;letter-spacing:1px;text-transform:uppercase;")
-        self.vf_title.setFixedHeight(16)
+        self.vf_title.setStyleSheet("color:#d1d5db;font-size:10px;letter-spacing:1px;")
+        self.vf_title.setMinimumHeight(16)
         vfl.addWidget(self.vf_title)
 
         _TAG_SS  = "color:#9ca3af;font-size:10px;letter-spacing:0px;text-transform:none;min-width:115px;max-width:115px;"
@@ -1072,8 +1072,7 @@ class BTCTransactionApp(QWidget):
         # ── Tabs ─────────────────────────────────────────────────────────────
         tabs = QTabWidget()
         tabs.setDocumentMode(True)
-        tabs.setFixedHeight(320)
-        tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         # ── Tab 1: BROADCAST ─────────────────────────────────────────────────
         tab_send = QWidget()
@@ -1121,10 +1120,10 @@ class BTCTransactionApp(QWidget):
         tsl.addLayout(fee_row)
 
         self.lbl_net_send = QLabel(self.tr("net_send_placeholder"))
-        self.lbl_net_send.setFixedHeight(14)
+        self.lbl_net_send.setMinimumHeight(16)
         self.lbl_net_send.setStyleSheet(
             "color:#9ca3af;font-size:10px;letter-spacing:0px;"
-            "text-transform:none;padding:0px;"
+            "padding:0px;"
         )
         tsl.addWidget(self.lbl_net_send)
 
@@ -1138,7 +1137,7 @@ class BTCTransactionApp(QWidget):
         tsl.addWidget(make_label(self.tr("txid")))
         txid_row = QHBoxLayout(); txid_row.setSpacing(6)
         self.output_txid = QLabel("—")
-        self.output_txid.setFixedHeight(26)
+        self.output_txid.setMinimumHeight(28)
         self.output_txid.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.output_txid.setStyleSheet(
             "color:#fbbf24;font-size:10px;font-family:'Courier New','Consolas',monospace;"
@@ -1157,8 +1156,8 @@ class BTCTransactionApp(QWidget):
         tol.setSpacing(5)
 
         self.lbl_offline_info = QLabel(self.tr("offline_info"))
-        self.lbl_offline_info.setFixedHeight(14)
-        self.lbl_offline_info.setStyleSheet("color:#9ca3af;font-size:10px;text-transform:none;letter-spacing:0px;")
+        self.lbl_offline_info.setMinimumHeight(16)
+        self.lbl_offline_info.setStyleSheet("color:#9ca3af;font-size:10px;letter-spacing:0px;")
         tol.addWidget(self.lbl_offline_info)
 
         tol.addWidget(make_label(self.tr("dest_addr")))
@@ -1201,10 +1200,10 @@ class BTCTransactionApp(QWidget):
         tol.addLayout(fee_off_row)
 
         self.lbl_net_offline = QLabel(self.tr("net_send_placeholder"))
-        self.lbl_net_offline.setFixedHeight(14)
+        self.lbl_net_offline.setMinimumHeight(16)
         self.lbl_net_offline.setStyleSheet(
             "color:#9ca3af;font-size:10px;letter-spacing:0px;"
-            "text-transform:none;padding:0px;"
+            "padding:0px;"
         )
         tol.addWidget(self.lbl_net_offline)
 
@@ -1219,8 +1218,8 @@ class BTCTransactionApp(QWidget):
         raw_row = QHBoxLayout(); raw_row.setSpacing(6)
         self.output_raw = QTextEdit()
         self.output_raw.setReadOnly(True)
-        self.output_raw.setFixedHeight(70)
-        self.output_raw.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.output_raw.setMinimumHeight(56)
+        self.output_raw.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.output_raw.setPlaceholderText(self.tr("raw_hex_ph"))
         raw_row.addWidget(self.output_raw, 1)
         raw_row.addWidget(make_copy_btn(self, lambda: self._last_raw_hex, self.tr("copy_tooltip")))
@@ -1229,10 +1228,13 @@ class BTCTransactionApp(QWidget):
 
         tabs.addTab(tab_send,    self.tr("tab_broadcast"))
         tabs.addTab(tab_offline, self.tr("tab_offline"))
-        root.addWidget(tabs)
-        root.addSpacing(6)
 
-        # ── Log ──────────────────────────────────────────────────────────────
+        # ── Tab 3: LOG ───────────────────────────────────────────────────────
+        tab_log = QWidget()
+        tlg = QVBoxLayout(tab_log)
+        tlg.setContentsMargins(8, 10, 8, 6)
+        tlg.setSpacing(5)
+
         log_hdr = QHBoxLayout()
         log_hdr.setSpacing(6)
         log_hdr.addWidget(make_label(self.tr("log")))
@@ -1245,19 +1247,26 @@ class BTCTransactionApp(QWidget):
         self.btn_clear_log.clicked.connect(lambda: self.log_output.clear())
         log_hdr.addWidget(self.btn_clear_log)
         log_hdr.addWidget(make_copy_btn(self, lambda: self.log_output.toPlainText(), self.tr("copy_tooltip")))
-        root.addLayout(log_hdr)
-        root.addSpacing(3)
+        tlg.addLayout(log_hdr)
+
         self.log_output = QTextEdit()
         self.log_output.setReadOnly(True)
-        self.log_output.setFixedHeight(110)
-        self.log_output.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        root.addWidget(self.log_output)
+        self.log_output.setMinimumHeight(70)
+        self.log_output.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        tlg.addWidget(self.log_output)
+
+        tabs.addTab(tab_log, self.tr("tab_log"))
+        root.addWidget(tabs)
 
         # Store references to tabs for refresh_ui_text
         self.tabs = tabs
 
         # Apply theme after all UI elements are created
         self.apply_theme()
+
+        # Size window from real content minimum
+        self.setMinimumSize(self.layout().minimumSize())
+        self.resize(648, self.layout().minimumSize().height() + 20)
 
     # ────────────────────────────────────────────────────────────────────────
     # HELPERS
@@ -1721,6 +1730,12 @@ class BTCTransactionApp(QWidget):
         self.btn_help.setToolTip(self.tr("help"))
         self.btn_show_key.setToolTip(self.tr("copy_tooltip"))
         self.btn_recover.setText(self.tr("recover"))
+
+        # Update all copy buttons
+        for btn in self._copy_buttons:
+            if hasattr(btn, 'update_copy_text'):
+                btn.update_copy_text()
+            btn.setToolTip(self.tr("copy_tooltip"))
 
         # Verification card
         self.vf_title.setText(self.tr("verification"))

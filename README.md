@@ -44,7 +44,7 @@ A production-ready Bitcoin wallet interface with offline transaction signing cap
 ```bash
 git clone https://github.com/franklin-lol/btc-wallet-tool
 cd btc-wallet-tool
-pip install PyQt6 bit requests
+pip install -r requirements.txt
 python btc_wallet_tool.py
 ```
 
@@ -52,7 +52,7 @@ python btc_wallet_tool.py
 
 ```bash
 pip install pyinstaller
-pyinstaller --onefile --windowed --name="BTCWalletTool" btc_wallet_tool.py
+pyinstaller --onefile --windowed --collect-all bit --collect-all coincurve --name="BTC-TX-Console" btc_wallet_tool.py
 ```
 
 ---
@@ -106,7 +106,7 @@ pyinstaller --onefile --windowed --name="BTCWalletTool" btc_wallet_tool.py
 - **RU:** Full Russian localization
 - **EN:** English translation
 - Settings persist across sessions
-- Requires app restart to apply language change
+- Language and theme switch live without restart
 
 ### Help Dialog
 - Accessible via toolbar **Help** button
@@ -119,9 +119,9 @@ pyinstaller --onefile --windowed --name="BTCWalletTool" btc_wallet_tool.py
 
 ## Window Dimensions
 
-- **Size:** 712×955px (~5% narrower, ~5% taller than previous 750×910)
+- **Default size:** 648×836px (resizable; minimum derived from content, ~648×820)
 - **Optimized for:** SegWit bech32 addresses (up to 62 characters)
-- **HiDPI:** Auto-scaling disabled for consistent layout
+- **HiDPI:** Native Qt auto-scaling enabled (crisp text on 125–150% displays)
 
 ---
 
@@ -166,9 +166,10 @@ Use **⚡ SUGGEST** button to fetch current mempool.space recommended fees:
 btc-wallet-tool/
 ├── btc_wallet_tool.py       # Main GUI application
 ├── translations.py          # RU/EN localization strings
-├── btc_transaction.log      # Auto-generated transaction log
+├── icon.py                  # App icon (generated in-memory via QPainter)
 ├── requirements.txt         # Python dependencies
-└── README.md               # This file
+├── .github/workflows/       # CI: Windows EXE build on release tags
+└── README.md                # This file
 ```
 
 ---

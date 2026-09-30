@@ -30,6 +30,7 @@ TRANSLATIONS = {
         'wif': 'WIF:',
         'wif_label': 'WIF:',
         'copy_tooltip': 'Копировать',
+        'copy_btn': 'Копировать',
 
         # Address selector & balance
         'address': 'АКТИВНЫЙ АДРЕС',
@@ -51,28 +52,26 @@ TRANSLATIONS = {
         # Tabs
         'tab_broadcast': 'ОТПРАВКА (BROADCAST)',
         'tab_offline': 'ОФФЛАЙН РЕЖИМ',
+        'tab_log': 'ЛОГ ОПЕРАЦИЙ',
 
         # Send transaction (broadcast)
-        'dest_address': 'АДРЕС ПОЛУЧАТЕЛЯ',
+        'dest_addr': 'АДРЕС ПОЛУЧАТЕЛЯ',
         'dest_placeholder': 'bc1q... или 1... или 3...',
+        'dest_addr_ph': 'bc1q... или 1... или 3...',
         'amount': 'СУММА (BTC) — БЕЗ комиссии',
-        'amount_placeholder': 'Пусто = отправить весь баланс',
-        'btn_max': 'MAX',
-        'fee': 'КОМИССИЯ (sat/byte)',
+        'amount_ph': 'Пусто = отправить весь баланс',
+        'max': 'MAX',
+        'fee': 'КОМИССИЯ (SAT/BYTE)',
         'fee_ph': 'напр. 5',
         'suggest': '⚡ ПРЕДЛОЖИТЬ',
-        'net_send': 'ЧИСТАЯ ОТПРАВКА',
         'net_send_placeholder': 'Получатель: — | Спишется с баланса: —',
-        'btn_send': '▶ ОТПРАВИТЬ ТРАНЗАКЦИЮ',
-        'btn_check': '⟳ ПРОВЕРИТЬ БАЛАНС',
+        'broadcast': '▶ ОТПРАВИТЬ ТРАНЗАКЦИЮ',
+        'check_balance': '⟳ ПРОВЕРИТЬ БАЛАНС',
         'txid': 'TXID',
-        'txid_placeholder': 'Появится после отправки',
 
         # Offline mode
-        'dest_address_offline': 'АДРЕС ПОЛУЧАТЕЛЯ',
-        'amount_offline': 'СУММА (BTC) — БЕЗ комиссии',
-        'fee_offline': 'КОМИССИЯ (sat/byte)',
-        'build_raw': '⬡ ПОСТРОИТЬ RAW TX (НЕ ОТПРАВЛЯТЬ)',
+        'offline_info': 'Подготовка подписанной TX без отправки в сеть',
+        'build_raw': '⬡ ПОСТРОИТЬ RAW TX',
         'raw_hex': 'RAW HEX (ПОДПИСАННАЯ TX)',
         'raw_hex_ph': 'Подписанная транзакция в HEX-формате появится здесь',
 
@@ -166,6 +165,7 @@ TRANSLATIONS = {
         'wif': 'WIF:',
         'wif_label': 'WIF:',
         'copy_tooltip': 'Copy',
+        'copy_btn': 'Copy',
 
         # Address selector & balance
         'address': 'ACTIVE ADDRESS',
@@ -187,28 +187,26 @@ TRANSLATIONS = {
         # Tabs
         'tab_broadcast': 'SEND (BROADCAST)',
         'tab_offline': 'OFFLINE MODE',
+        'tab_log': 'OPERATION LOG',
 
         # Send transaction (broadcast)
-        'dest_address': 'RECIPIENT ADDRESS',
+        'dest_addr': 'RECIPIENT ADDRESS',
         'dest_placeholder': 'bc1q... or 1... or 3...',
+        'dest_addr_ph': 'bc1q... or 1... or 3...',
         'amount': 'AMOUNT (BTC) — EXCLUDING FEE',
-        'amount_placeholder': 'Empty = send all balance',
-        'btn_max': 'MAX',
-        'fee': 'FEE (sat/byte)',
+        'amount_ph': 'Empty = send all balance',
+        'max': 'MAX',
+        'fee': 'FEE (SAT/BYTE)',
         'fee_ph': 'e.g. 5',
         'suggest': '⚡ SUGGEST',
-        'net_send': 'NET SEND',
         'net_send_placeholder': 'Recipient gets: — | Debit from balance: —',
-        'btn_send': '▶ SEND TRANSACTION',
-        'btn_check': '⟳ CHECK BALANCE',
+        'broadcast': '▶ SEND TRANSACTION',
+        'check_balance': '⟳ CHECK BALANCE',
         'txid': 'TXID',
-        'txid_placeholder': 'Will appear after broadcast',
 
         # Offline mode
-        'dest_address_offline': 'RECIPIENT ADDRESS',
-        'amount_offline': 'AMOUNT (BTC) — EXCLUDING FEE',
-        'fee_offline': 'FEE (sat/byte)',
-        'build_raw': '⬡ BUILD RAW TX (NO BROADCAST)',
+        'offline_info': 'Build signed TX without broadcasting to network',
+        'build_raw': '⬡ BUILD RAW TX',
         'raw_hex': 'RAW HEX (SIGNED TX)',
         'raw_hex_ph': 'Signed transaction hex will appear here',
 
@@ -283,3 +281,21 @@ def get_translation(lang_code: str, key: str) -> str:
     """Get translated string for given language and key."""
     lang = TRANSLATIONS.get(lang_code, TRANSLATIONS['en'])
     return lang.get(key, key)
+
+
+# ── Compatibility aliases: code keys → canonical translation keys ──────────
+_ALIASES = {
+    'copy_btn': 'copy_tooltip', 'check_balance': 'btn_check_balance',
+    'dest_addr': 'dest_addr', 'dest_addr_ph': 'dest_placeholder',
+    'amount_ph': 'amount_placeholder', 'amount_placeholder': 'amount_ph',
+    'max': 'max', 'broadcast': 'broadcast', 'btn_send': 'broadcast',
+}
+_EXTRA = {
+    'ru': {'offline_info': 'Оффлайн: сборка raw-транзакции без отправки в сеть'},
+    'en': {'offline_info': 'Offline: build a raw transaction without broadcasting'},
+}
+for _l, _d in TRANSLATIONS.items():
+    for _k, _src in _ALIASES.items():
+        _d.setdefault(_k, _d.get(_src, _k))
+    for _k, _v in _EXTRA.get(_l, {}).items():
+        _d.setdefault(_k, _v)
